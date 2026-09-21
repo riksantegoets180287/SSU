@@ -3,7 +3,7 @@ import { Lock, ArrowLeft, CircleAlert as AlertCircle, Loader as Loader2 } from '
 import { verifyAdminPin } from '../lib/verifyAdminPin';
 
 interface AdminPinScreenProps {
-  onSuccess: () => void;
+  onSuccess: (sessionToken: string) => void;
   onBack: () => void;
 }
 
@@ -36,11 +36,11 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
     const result = await verifyAdminPin(candidatePin);
     setVerifying(false);
 
-    if (result.success) {
+    if (result.success && result.sessionToken) {
       setPin('');
-      onSuccess();
+      onSuccess(result.sessionToken);
     } else {
-      setError(result.error || 'Ongeldige code.');
+      setError('Ongeldige code.');
       setTimeout(() => {
         setPin('');
       }, 500);
@@ -53,7 +53,7 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
     if (pin.length === 6) {
       verifyPin(pin);
     } else {
-      setError('Voer 6 cijfers in.');
+      setError('Ongeldige code.');
     }
   };
 
@@ -149,13 +149,17 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
           </button>
         </div>
 
-        {/* Fallback keyboard support */}
-        <form onSubmit={handleFormSubmit} className="max-w-xs mx-auto">
+        {/* Fallback keyboard support — autocomplete off prevents browser from saving the PIN */}
+        <form onSubmit={handleFormSubmit} className="max-w-xs mx-auto" autoComplete="off">
           <input
             type="password"
             maxLength={6}
             value={pin}
             disabled={verifying}
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
             onChange={(e) => {
               const val = e.target.value.replace(/\D/g, '').slice(0, 6);
               setPin(val);

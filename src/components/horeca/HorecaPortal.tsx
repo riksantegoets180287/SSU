@@ -18,6 +18,7 @@ import { generateTicketReceiptPdf } from '../../utils/ticketReceiptPdf';
 import { MenuManagementModal } from '../service/MenuManagementModal';
 import { AdminMenuManagementTab } from '../admin/AdminMenuManagementTab';
 import { verifyAdminPin } from '../../lib/verifyAdminPin';
+import type { AdminSessionState } from '../../lib/useAdminSession';
 
 interface HorecaPortalProps {
   tickets: ServiceTicket[];
@@ -31,6 +32,7 @@ interface HorecaPortalProps {
   onUnarchiveTicket?: (ticketId: string) => void;
   onDeleteTicket?: (ticketId: string) => void;
   onBackToPortal: () => void;
+  adminSession: AdminSessionState;
 }
 
 export const HorecaPortal: React.FC<HorecaPortalProps> = ({
@@ -42,17 +44,19 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
   onAddTicket,
   onUpdateTicketStatus,
   onBackToPortal,
+  adminSession,
 }) => {
   // Main Tab: 'order' (customer ordering), 'kitchen' (DV team kitchen & pickup desk), or 'admin' (weekmenu & portion management)
   const [activeTab, setActiveTab] = useState<'order' | 'kitchen' | 'admin'>('order');
   
   // Admin authentication state
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [pinVerifying, setPinVerifying] = useState(false);
   const [pendingAdminAction, setPendingAdminAction] = useState<'open_modal' | 'switch_tab'>('switch_tab');
+
+  const isAdminAuthenticated = adminSession.isAuthenticated;
 
   // Modals
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
@@ -76,8 +80,8 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
     }
   };
 
-  const grantAdminAccess = () => {
-    setIsAdminAuthenticated(true);
+  const grantAdminAccess = (token: string) => {
+    adminSession.login(token);
     setShowPinModal(false);
     setPinError('');
     if (pendingAdminAction === 'open_modal') {
@@ -91,17 +95,17 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
   const handleVerifyAdminPin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (pinVerifying || pinInput.length !== 6) {
-      if (pinInput.length !== 6) setPinError('Voer 6 cijfers in.');
+      if (pinInput.length !== 6) setPinError('Ongeldige code.');
       return;
     }
     setPinVerifying(true);
     setPinError('');
     const result = await verifyAdminPin(pinInput);
     setPinVerifying(false);
-    if (result.success) {
-      grantAdminAccess();
+    if (result.success && result.sessionToken) {
+      grantAdminAccess(result.sessionToken);
     } else {
-      setPinError(result.error || 'Ongeldige code.');
+      setPinError('Ongeldige code.');
       setPinInput('');
     }
   };
@@ -376,8 +380,8 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
                 <span>Admin</span>
               </div>
               <button
-                onClick={() => {
-                  setIsAdminAuthenticated(false);
+                onClick={async () => {
+                  await adminSession.logout();
                   if (activeTab === 'admin') setActiveTab('order');
                 }}
                 title="Beheerderssessie vergrendelen / uitloggen"
@@ -1257,12 +1261,16 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
               </p>
             </div>
 
-            <form onSubmit={handleVerifyAdminPin} className="space-y-4">
+            <form onSubmit={handleVerifyAdminPin} className="space-y-4" autoComplete="off">
               <div>
                 <input
                   type="password"
                   maxLength={6}
                   autoFocus
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={pinInput}
                   onChange={(e) => {
                     setPinInput(e.target.value);
@@ -1302,10 +1310,10 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
                             setPinError('');
                             const result = await verifyAdminPin(next);
                             setPinVerifying(false);
-                            if (result.success) {
-                              grantAdminAccess();
+                            if (result.success && result.sessionToken) {
+                              grantAdminAccess(result.sessionToken);
                             } else {
-                              setPinError(result.error || 'Ongeldige code.');
+                              setPinError('Ongeldige code.');
                               setPinInput('');
                             }
                           })();

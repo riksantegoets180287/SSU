@@ -51,7 +51,8 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { ServicePortal } from './components/service/ServicePortal';
 import { PublicServiceRequestForm } from './components/service/PublicServiceRequestForm';
 import { HorecaPortal } from './components/horeca/HorecaPortal';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { CircleCheck as CheckCircle2, CircleAlert as AlertCircle, Info, X } from 'lucide-react';
+import { useAdminSession } from './lib/useAdminSession';
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<MainSystemModule>(() => {
@@ -66,6 +67,7 @@ export default function App() {
   });
   const [currentView, setCurrentView] = useState<AppView>('role_select');
   const [userSession, setUserSession] = useState<BorrowerSession | null>(null);
+  const adminSession = useAdminSession();
   
   // Public request mode for colleagues opening via external link
   const [isPublicRequestMode, setIsPublicRequestMode] = useState<boolean>(() => {
@@ -600,7 +602,10 @@ export default function App() {
         onNavigateView={setCurrentView}
         onSwitchModule={handleSwitchModule}
         userSession={userSession}
-        onLogoutAdmin={() => setCurrentView('role_select')}
+        onLogoutAdmin={async () => {
+          await adminSession.logout();
+          setCurrentView('role_select');
+        }}
         onResetUserSession={handleResetUserSession}
       />
 
@@ -667,6 +672,7 @@ export default function App() {
             onToggleTeacherActive={handleToggleTeacherActive}
             onBackToPortal={() => setActiveModule('portal')}
             onOpenPublicLinkView={() => setIsPublicRequestMode(true)}
+            adminSession={adminSession}
           />
         )}
 
@@ -684,6 +690,7 @@ export default function App() {
             onUnarchiveTicket={handleUnarchiveTicket}
             onDeleteTicket={handleDeleteTicket}
             onBackToPortal={() => setActiveModule('portal')}
+            adminSession={adminSession}
           />
         )}
 
@@ -724,7 +731,10 @@ export default function App() {
             {/* ROL 2: Beheerder / Admin */}
             {currentView === 'admin_pin' && (
               <AdminPinScreen
-                onSuccess={() => setCurrentView('admin_dashboard')}
+                onSuccess={(token) => {
+                  adminSession.login(token);
+                  setCurrentView('admin_dashboard');
+                }}
                 onBack={() => setCurrentView('role_select')}
               />
             )}
@@ -749,7 +759,10 @@ export default function App() {
                 onAddStudent={handleAddStudent}
                 onDeleteStudent={handleDeleteStudent}
                 onToggleStudentActive={handleToggleStudentActive}
-                onExitAdmin={() => setCurrentView('role_select')}
+                onExitAdmin={async () => {
+                  await adminSession.logout();
+                  setCurrentView('role_select');
+                }}
                 onResetToStandardMaterials={handleResetToStandardMaterials}
               />
             )}

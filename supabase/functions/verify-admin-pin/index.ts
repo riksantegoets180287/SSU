@@ -7,14 +7,21 @@ const corsHeaders = {
 };
 
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_MS = 10 * 60 * 1000; // 10 minutes
 const WINDOW_MS = 15 * 60 * 1000; // 15-minute sliding window
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 async function sha256(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function generateToken(): string {
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 Deno.serve(async (req: Request) => {
@@ -59,7 +66,7 @@ Deno.serve(async (req: Request) => {
 
     const adminPinHash = configRow.value;
 
-    // Get client IP for rate limiting
+    // Get client IP for rate limiting — only the hash is stored, never the raw IP
     const forwardHeader = req.headers.get("x-forwarded-for") || "";
     const clientIp = forwardHeader.split(",")[0].trim() || "unknown";
     const ipHash = await sha256(clientIp);
@@ -108,8 +115,31 @@ Deno.serve(async (req: Request) => {
           .update({ attempt_count: 0, first_attempt_at: null, locked_until: null })
           .eq("ip_hash", ipHash);
       }
+
+      // Create a server-side session
+      const token = generateToken();
+      const tokenHash = await sha256(token);
+      const nowIso = new Date(now).toISOString();
+      const expiresIso = new Date(now + SESSION_TIMEOUT_MS).toISOString();
+
+      const { error: sessionError } = await supabase
+        .from("admin_sessions")
+        .insert({
+          token_hash: tokenHash,
+          created_at: nowIso,
+          last_activity_at: nowIso,
+          expires_at: expiresIso,
+        });
+
+      if (sessionError) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Er is een fout opgetreden." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       return new Response(
-        JSON.stringify({ success: true }),
+        JSON.stringify({ success: true, sessionToken: token, expiresAt: expiresIso }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -153,7 +183,7 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ success: false, error: "Ongeldige code." }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (err) {
+  } catch {
     return new Response(
       JSON.stringify({ success: false, error: "Er is een fout opgetreden." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },

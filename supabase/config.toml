@@ -1,2 +1,8 @@
 [functions.verify-admin-pin]
 verify_jwt = true
+
+[functions.validate-admin-session]
+verify_jwt = true
+
+[functions.admin-logout]
+verify_jwt = true

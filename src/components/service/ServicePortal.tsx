@@ -8,6 +8,7 @@ import { ShareLinkModal } from './ShareLinkModal';
 import { ServiceAdminView } from './ServiceAdminView';
 import { MenuManagementModal } from './MenuManagementModal';
 import { verifyAdminPin } from '../../lib/verifyAdminPin';
+import type { AdminSessionState } from '../../lib/useAdminSession';
 
 interface ServicePortalProps {
   tickets: ServiceTicket[];
@@ -28,6 +29,7 @@ interface ServicePortalProps {
   onToggleTeacherActive?: (teacherId: string) => void;
   onBackToPortal: () => void;
   onOpenPublicLinkView?: () => void;
+  adminSession: AdminSessionState;
 }
 
 export const ServicePortal: React.FC<ServicePortalProps> = ({
@@ -49,14 +51,15 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   onToggleTeacherActive,
   onBackToPortal,
   onOpenPublicLinkView,
+  adminSession,
 }) => {
   // Mode: Desk (Baliemedewerker) vs Admin (Beheerder)
   const [serviceRoleMode, setServiceRoleMode] = useState<'desk' | 'admin'>('desk');
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [pinInput, setPinInput] = useState<string>('');
   const [pinError, setPinError] = useState<string>('');
   const [pinVerifying, setPinVerifying] = useState(false);
+  const isAdminAuthenticated = adminSession.isAuthenticated;
 
   // Desk State
   const [activeTab, setActiveTab] = useState<'overview' | 'new_ticket'>('overview');
@@ -111,21 +114,21 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
     e.preventDefault();
     if (pinVerifying) return;
     if (pinInput.length !== 6) {
-      setPinError('Voer 6 cijfers in.');
+      setPinError('Ongeldige code.');
       return;
     }
     setPinVerifying(true);
     setPinError('');
     const result = await verifyAdminPin(pinInput);
     setPinVerifying(false);
-    if (result.success) {
-      setIsAdminAuthenticated(true);
+    if (result.success && result.sessionToken) {
+      adminSession.login(result.sessionToken);
       setShowPinModal(false);
       setServiceRoleMode('admin');
       setPinInput('');
       setPinError('');
     } else {
-      setPinError(result.error || 'Ongeldige code.');
+      setPinError('Ongeldige code.');
       setPinInput('');
     }
   };
@@ -1752,12 +1755,16 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
               Voer de 6-cijferige pincode in om naar het Service Beheerpaneel te gaan.
             </p>
 
-            <form onSubmit={handleVerifyPin} className="space-y-4">
+            <form onSubmit={handleVerifyPin} className="space-y-4" autoComplete="off">
               <div>
                 <input
                   type="password"
                   maxLength={6}
                   autoFocus
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={pinInput}
                   onChange={(e) => {
                     setPinInput(e.target.value);
