@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, ArrowLeft, CircleAlert as AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, ArrowLeft, CircleAlert as AlertCircle, Loader as Loader2 } from 'lucide-react';
 import { verifyAdminPin } from '../lib/verifyAdminPin';
 
 interface AdminPinScreenProps {
