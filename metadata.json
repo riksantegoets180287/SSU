@@ -1,0 +1,7 @@
+{
+  "name": "Summa Plus Portaal",
+  "description": "Centraal portaal voor Summa Plus: Uitleensysteem voor materialen, Servicesysteem voor klusjestickets & vergaderruimtes, én Horeca maaltijdbestellingen met live portiebeheer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
