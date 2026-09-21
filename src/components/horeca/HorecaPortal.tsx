@@ -1,37 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Utensils, 
-  Clock, 
-  Calendar, 
-  User, 
-  Users, 
-  MapPin, 
-  Plus, 
-  Minus, 
-  ShoppingBag, 
-  CheckCircle2, 
-  ArrowLeft, 
-  Share2, 
-  FileDown, 
-  Search, 
-  AlertCircle, 
-  Flame, 
-  Sparkles, 
-  ChevronRight, 
-  Check, 
-  Phone, 
-  Mail, 
-  Building2, 
-  Filter, 
-  ChefHat, 
-  Layers, 
-  RotateCcw,
-  Copy,
-  ExternalLink,
-  Lock,
-  ShieldCheck,
-  KeyRound
-} from 'lucide-react';
+import { Utensils, Clock, Calendar, User, Users, MapPin, Plus, Minus, ShoppingBag, CircleCheck as CheckCircle2, ArrowLeft, Share2, FileDown, Search, CircleAlert as AlertCircle, Flame, Sparkles, ChevronRight, Check, Phone, Mail, Building2, ListFilter as Filter, ChefHat, Layers, RotateCcw, Copy, ExternalLink, Lock, ShieldCheck, KeyRound } from 'lucide-react';
 import { 
   ServiceTicket, 
   StudentWorker, 
@@ -108,7 +76,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
 
   const handleVerifyAdminPin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (pinInput === '1234') {
+    if (pinInput === '102938') {
       setIsAdminAuthenticated(true);
       setShowPinModal(false);
       setPinError('');
@@ -119,7 +87,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
       }
       setPinInput('');
     } else {
-      setPinError('Onjuiste pincode. Gebruik standaard pincode 1234.');
+      setPinError('Onjuiste pincode. Gebruik standaard pincode 102938.');
     }
   };
 
@@ -1270,7 +1238,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
                 Beheerder Toegang (Admin)
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Voer de 4-cijferige beheerderscode in om toegang te krijgen tot het weekmenu en de porties.
+                Voer de 6-cijferige beheerderscode in om toegang te krijgen tot het weekmenu en de porties.
               </p>
             </div>
 
@@ -1278,14 +1246,14 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
               <div>
                 <input
                   type="password"
-                  maxLength={4}
+                  maxLength={6}
                   autoFocus
                   value={pinInput}
                   onChange={(e) => {
                     setPinInput(e.target.value);
                     setPinError('');
                   }}
-                  placeholder="••••"
+                  placeholder="••••••"
                   className="w-full py-3 text-center tracking-[0.6em] text-2xl font-bold bg-[#F7F5FA] border-2 border-slate-200 rounded-2xl text-[#24126E] focus:outline-none focus:border-[#D70096] transition-all"
                 />
                 {pinError && (
@@ -1307,7 +1275,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
                         setPinInput('');
                         setPinError('');
                       } else if (btn === '✓') {
-                        if (pinInput === '1234') {
+                        if (pinInput === '102938') {
                           setIsAdminAuthenticated(true);
                           setShowPinModal(false);
                           if (pendingAdminAction === 'open_modal') {
@@ -1318,14 +1286,14 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
                           setPinInput('');
                           setPinError('');
                         } else {
-                          setPinError('Onjuiste pincode. Gebruik standaard pincode 1234.');
+                          setPinError('Onjuiste pincode. Gebruik standaard pincode 102938.');
                         }
-                      } else if (pinInput.length < 4) {
+                      } else if (pinInput.length < 6) {
                         const next = pinInput + btn;
                         setPinInput(next);
                         setPinError('');
-                        if (next.length === 4) {
-                          if (next === '1234') {
+                        if (next.length === 6) {
+                          if (next === '102938') {
                             setIsAdminAuthenticated(true);
                             setShowPinModal(false);
                             if (pendingAdminAction === 'open_modal') {
@@ -1336,7 +1304,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
                             setPinInput('');
                             setPinError('');
                           } else {
-                            setPinError('Onjuiste pincode. Gebruik standaard pincode 1234.');
+                            setPinError('Onjuiste pincode. Gebruik standaard pincode 102938.');
                           }
                         }
                       }
@@ -1355,7 +1323,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
               </div>
 
               <div className="pt-2 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">Standaard pincode: <strong>1234</strong></span>
+                <span className="text-[11px] text-slate-400">Standaard pincode: <strong>102938</strong></span>
                 <button
                   type="button"
                   onClick={() => setShowPinModal(false)}

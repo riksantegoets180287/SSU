@@ -1,50 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { 
-  Wrench, 
-  Plus, 
-  Search, 
-  Filter, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
-  AlertTriangle, 
-  MapPin, 
-  User, 
-  Calendar, 
-  Layers, 
-  Tv, 
-  Building2, 
-  Armchair, 
-  Sparkles, 
-  Send, 
-  X, 
-  ArrowLeft, 
-  MessageSquare, 
-  ChevronRight, 
-  LayoutGrid, 
-  List as ListIcon, 
-  HelpCircle,
-  Tag,
-  Phone,
-  Mail,
-  ShieldCheck,
-  Check,
-  Camera,
-  Image as ImageIcon,
-  Users,
-  GraduationCap,
-  Briefcase,
-  Eye,
-  Download,
-  Link2,
-  Lock,
-  Archive,
-  Unlock,
-  KeyRound,
-  FileDown,
-  Utensils,
-  ChefHat
-} from 'lucide-react';
+import { Wrench, Plus, Search, ListFilter as Filter, CircleCheck as CheckCircle2, Clock, CircleAlert as AlertCircle, TriangleAlert as AlertTriangle, MapPin, User, Calendar, Layers, Tv, Building2, Armchair, Sparkles, Send, X, ArrowLeft, MessageSquare, ChevronRight, LayoutGrid, List as ListIcon, Circle as HelpCircle, Tag, Phone, Mail, ShieldCheck, Check, Camera, Image as ImageIcon, Users, GraduationCap, Briefcase, Eye, Download, Link2, Lock, Archive, Clock as Unlock, KeyRound, FileDown, Utensils, ChefHat } from 'lucide-react';
 import { ServiceTicket, TicketCategory, TicketPriority, TicketStatus, StudentWorker, SupervisingTeacher, MenuItem } from '../../types';
 import { generateTicketReceiptPdf } from '../../utils/ticketReceiptPdf';
 import { formatDutchDate, formatDutchDateTime, getStoredMenuItems, saveMenuItems } from '../../lib/storage';
@@ -152,14 +107,14 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   // Handle Admin PIN verification
   const handleVerifyPin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput === '1234') {
+    if (pinInput === '102938') {
       setIsAdminAuthenticated(true);
       setShowPinModal(false);
       setServiceRoleMode('admin');
       setPinInput('');
       setPinError('');
     } else {
-      setPinError('Onjuiste pincode. Gebruik standaard pincode 1234.');
+      setPinError('Onjuiste pincode. Gebruik standaard pincode 102938.');
     }
   };
 
@@ -1796,13 +1751,13 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
                     setPinInput(e.target.value);
                     setPinError('');
                   }}
-                  placeholder="Pincode (1234)"
+                  placeholder="Pincode (102938)"
                   className="w-full text-center text-2xl tracking-widest font-mono font-bold py-3 bg-[#F7F5FA] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D70096]"
                 />
                 {pinError ? (
                   <p className="text-xs text-red-600 mt-2 font-medium">{pinError}</p>
                 ) : (
-                  <p className="text-[11px] text-slate-400 mt-2">Standaard pincode: 1234</p>
+                  <p className="text-[11px] text-slate-400 mt-2">Standaard pincode: 102938</p>
                 )}
               </div>
 

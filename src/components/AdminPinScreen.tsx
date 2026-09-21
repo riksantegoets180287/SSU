@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Lock, ArrowLeft, AlertCircle, KeyRound, Check } from 'lucide-react';
+import { Shield, Lock, ArrowLeft, CircleAlert as AlertCircle, KeyRound, Check } from 'lucide-react';
 
 interface AdminPinScreenProps {
   onSuccess: () => void;
@@ -8,19 +8,19 @@ interface AdminPinScreenProps {
 
 // MVP DEMO PIN: In a production environment with Summa College infrastructure,
 // this would be replaced with Microsoft Entra ID / Azure AD SSO or role-based auth.
-const DEMO_ADMIN_PIN = '1234';
+const DEMO_ADMIN_PIN = '102938';
 
 export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBack }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleDigitClick = (digit: string) => {
-    if (pin.length < 4) {
+    if (pin.length < 6) {
       const nextPin = pin + digit;
       setPin(nextPin);
       setError(null);
 
-      if (nextPin.length === 4) {
+      if (nextPin.length === 6) {
         verifyPin(nextPin);
       }
     }
@@ -44,10 +44,10 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin.length === 4) {
+    if (pin.length === 6) {
       verifyPin(pin);
     } else {
-      setError('Voer 4 cijfers in.');
+      setError('Voer 6 cijfers in.');
     }
   };
 
@@ -71,18 +71,18 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
           Beheerderspaneel
         </h2>
         <p className="text-xs text-slate-500 mt-1.5 mb-5">
-          Voer de 4-cijferige pincode in om toegang te krijgen tot het admin-overzicht.
+          Voer de 6-cijferige pincode in om toegang te krijgen tot het admin-overzicht.
         </p>
 
         {/* Demo badge reminder */}
         <div className="inline-flex items-center gap-1.5 bg-indigo-50 text-[#24126E] text-[11px] font-bold px-3 py-1 rounded-full mb-6 border border-indigo-100">
           <KeyRound className="w-3.5 h-3.5 text-[#D70096]" />
-          <span>Demo PIN: <strong>1234</strong></span>
+          <span>Demo PIN: <strong>102938</strong></span>
         </div>
 
         {/* PIN dots display */}
         <div className="flex justify-center items-center gap-3 mb-6">
-          {[0, 1, 2, 3].map((index) => {
+          {[0, 1, 2, 3, 4, 5].map((index) => {
             const isFilled = index < pin.length;
             return (
               <div
@@ -149,12 +149,12 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
         <form onSubmit={handleFormSubmit} className="max-w-xs mx-auto">
           <input
             type="password"
-            maxLength={4}
+            maxLength={6}
             value={pin}
             onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+              const val = e.target.value.replace(/\D/g, '').slice(0, 6);
               setPin(val);
-              if (val.length === 4) verifyPin(val);
+              if (val.length === 6) verifyPin(val);
             }}
             className="sr-only"
             autoFocus

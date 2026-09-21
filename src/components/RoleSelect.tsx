@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserCheck, ShieldCheck, ArrowRight, BookOpen, Layers, CheckCircle2 } from 'lucide-react';
+import { UserCheck, ShieldCheck, ArrowRight, BookOpen, Layers, CircleCheck as CheckCircle2 } from 'lucide-react';
 import { AppView } from '../types';
 
 interface RoleSelectProps {
@@ -126,7 +126,7 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({
                 Beheerderspaneel openen
               </span>
               <span className="text-[10px] bg-indigo-50 text-[#24126E] px-2 py-0.5 rounded font-mono font-bold">
-                PIN: 1234
+                PIN: 102938
               </span>
             </div>
             <div className="w-7 h-7 rounded-xl bg-[#24126E] text-white flex items-center justify-center transition-colors">
