@@ -7,6 +7,7 @@ import { compressImageFile } from '../../lib/barcode';
 import { ShareLinkModal } from './ShareLinkModal';
 import { ServiceAdminView } from './ServiceAdminView';
 import { MenuManagementModal } from './MenuManagementModal';
+import { verifyAdminPin } from '../../lib/verifyAdminPin';
 
 interface ServicePortalProps {
   tickets: ServiceTicket[];
@@ -55,6 +56,7 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [pinInput, setPinInput] = useState<string>('');
   const [pinError, setPinError] = useState<string>('');
+  const [pinVerifying, setPinVerifying] = useState(false);
 
   // Desk State
   const [activeTab, setActiveTab] = useState<'overview' | 'new_ticket'>('overview');
@@ -105,16 +107,26 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   const [submittedTicket, setSubmittedTicket] = useState<ServiceTicket | null>(null);
 
   // Handle Admin PIN verification
-  const handleVerifyPin = (e: React.FormEvent) => {
+  const handleVerifyPin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput === '102938') {
+    if (pinVerifying) return;
+    if (pinInput.length !== 6) {
+      setPinError('Voer 6 cijfers in.');
+      return;
+    }
+    setPinVerifying(true);
+    setPinError('');
+    const result = await verifyAdminPin(pinInput);
+    setPinVerifying(false);
+    if (result.success) {
       setIsAdminAuthenticated(true);
       setShowPinModal(false);
       setServiceRoleMode('admin');
       setPinInput('');
       setPinError('');
     } else {
-      setPinError('Onjuiste pincode. Gebruik standaard pincode 102938.');
+      setPinError(result.error || 'Ongeldige code.');
+      setPinInput('');
     }
   };
 
@@ -1737,7 +1749,7 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
               Beheerder Toegang
             </h3>
             <p className="text-xs text-slate-500 mb-6">
-              Voer de pincode in om naar het Service Beheerpaneel te gaan.
+              Voer de 6-cijferige pincode in om naar het Service Beheerpaneel te gaan.
             </p>
 
             <form onSubmit={handleVerifyPin} className="space-y-4">
@@ -1751,13 +1763,15 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
                     setPinInput(e.target.value);
                     setPinError('');
                   }}
-                  placeholder="Pincode (102938)"
+                  placeholder="••••••"
                   className="w-full text-center text-2xl tracking-widest font-mono font-bold py-3 bg-[#F7F5FA] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D70096]"
                 />
                 {pinError ? (
                   <p className="text-xs text-red-600 mt-2 font-medium">{pinError}</p>
+                ) : pinVerifying ? (
+                  <p className="text-[11px] text-slate-400 mt-2">Controleren...</p>
                 ) : (
-                  <p className="text-[11px] text-slate-400 mt-2">Standaard pincode: 102938</p>
+                  <p className="text-[11px] text-slate-400 mt-2">&nbsp;</p>
                 )}
               </div>
 
@@ -1775,7 +1789,8 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-[#24126E] hover:bg-[#1A0D52] text-white text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                  disabled={pinVerifying}
+                  className="flex-1 py-2.5 rounded-xl bg-[#24126E] hover:bg-[#1A0D52] text-white text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
                 >
                   Inloggen
                 </button>

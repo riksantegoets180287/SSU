@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import { Shield, Lock, ArrowLeft, CircleAlert as AlertCircle, KeyRound, Check } from 'lucide-react';
+import { Lock, ArrowLeft, CircleAlert as AlertCircle, Loader2 } from 'lucide-react';
+import { verifyAdminPin } from '../lib/verifyAdminPin';
 
 interface AdminPinScreenProps {
   onSuccess: () => void;
   onBack: () => void;
 }
 
-// MVP DEMO PIN: In a production environment with Summa College infrastructure,
-// this would be replaced with Microsoft Entra ID / Azure AD SSO or role-based auth.
-const DEMO_ADMIN_PIN = '102938';
-
 export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBack }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   const handleDigitClick = (digit: string) => {
+    if (verifying) return;
     if (pin.length < 6) {
       const nextPin = pin + digit;
       setPin(nextPin);
@@ -31,11 +30,17 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
     setError(null);
   };
 
-  const verifyPin = (candidatePin: string) => {
-    if (candidatePin === DEMO_ADMIN_PIN) {
+  const verifyPin = async (candidatePin: string) => {
+    setVerifying(true);
+    setError(null);
+    const result = await verifyAdminPin(candidatePin);
+    setVerifying(false);
+
+    if (result.success) {
+      setPin('');
       onSuccess();
     } else {
-      setError('Onjuiste pincode. Probeer het opnieuw.');
+      setError(result.error || 'Ongeldige code.');
       setTimeout(() => {
         setPin('');
       }, 500);
@@ -44,6 +49,7 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (verifying) return;
     if (pin.length === 6) {
       verifyPin(pin);
     } else {
@@ -73,12 +79,6 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
         <p className="text-xs text-slate-500 mt-1.5 mb-5">
           Voer de 6-cijferige pincode in om toegang te krijgen tot het admin-overzicht.
         </p>
-
-        {/* Demo badge reminder */}
-        <div className="inline-flex items-center gap-1.5 bg-indigo-50 text-[#24126E] text-[11px] font-bold px-3 py-1 rounded-full mb-6 border border-indigo-100">
-          <KeyRound className="w-3.5 h-3.5 text-[#D70096]" />
-          <span>Demo PIN: <strong>102938</strong></span>
-        </div>
 
         {/* PIN dots display */}
         <div className="flex justify-center items-center gap-3 mb-6">
@@ -112,34 +112,38 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
               key={digit}
               id={`btn-keypad-${digit}`}
               type="button"
+              disabled={verifying}
               onClick={() => handleDigitClick(digit)}
-              className="h-14 rounded-2xl bg-[#F7F5FA] hover:bg-indigo-50 active:bg-[#24126E] active:text-white text-[#24126E] font-bold text-xl transition-all cursor-pointer border border-slate-200/80 shadow-xs"
+              className="h-14 rounded-2xl bg-[#F7F5FA] hover:bg-indigo-50 active:bg-[#24126E] active:text-white text-[#24126E] font-bold text-xl transition-all cursor-pointer border border-slate-200/80 shadow-xs disabled:opacity-50"
             >
               {digit}
             </button>
           ))}
           <button
             type="button"
+            disabled={verifying}
             onClick={() => {
               setPin('');
               setError(null);
             }}
-            className="h-14 rounded-2xl bg-[#F7F5FA] hover:bg-red-50 text-xs font-bold text-slate-500 hover:text-red-600 transition-colors border border-slate-200/80"
+            className="h-14 rounded-2xl bg-[#F7F5FA] hover:bg-red-50 text-xs font-bold text-slate-500 hover:text-red-600 transition-colors border border-slate-200/80 disabled:opacity-50"
           >
             Wissen
           </button>
           <button
             id="btn-keypad-0"
             type="button"
+            disabled={verifying}
             onClick={() => handleDigitClick('0')}
-            className="h-14 rounded-2xl bg-[#F7F5FA] hover:bg-indigo-50 active:bg-[#24126E] active:text-white text-[#24126E] font-bold text-xl transition-all cursor-pointer border border-slate-200/80 shadow-xs"
+            className="h-14 rounded-2xl bg-[#F7F5FA] hover:bg-indigo-50 active:bg-[#24126E] active:text-white text-[#24126E] font-bold text-xl transition-all cursor-pointer border border-slate-200/80 shadow-xs disabled:opacity-50"
           >
             0
           </button>
           <button
             type="button"
+            disabled={verifying}
             onClick={handleDelete}
-            className="h-14 rounded-2xl bg-[#F7F5FA] hover:bg-indigo-50 text-xs font-bold text-slate-500 transition-colors border border-slate-200/80"
+            className="h-14 rounded-2xl bg-[#F7F5FA] hover:bg-indigo-50 text-xs font-bold text-slate-500 transition-colors border border-slate-200/80 disabled:opacity-50"
           >
             ⌫
           </button>
@@ -151,9 +155,11 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
             type="password"
             maxLength={6}
             value={pin}
+            disabled={verifying}
             onChange={(e) => {
               const val = e.target.value.replace(/\D/g, '').slice(0, 6);
               setPin(val);
+              setError(null);
               if (val.length === 6) verifyPin(val);
             }}
             className="sr-only"
@@ -164,6 +170,13 @@ export const AdminPinScreen: React.FC<AdminPinScreenProps> = ({ onSuccess, onBac
         <p className="text-[11px] text-slate-400">
           Tip: Je kunt ook de cijfertoetsen op je toetsenbord gebruiken.
         </p>
+
+        {verifying && (
+          <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-slate-400">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <span>Controleren...</span>
+          </div>
+        )}
       </div>
     </div>
   );

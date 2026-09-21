@@ -1,0 +1,2 @@
+[functions.verify-admin-pin]
+verify_jwt = true

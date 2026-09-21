@@ -17,6 +17,7 @@ import {
 import { generateTicketReceiptPdf } from '../../utils/ticketReceiptPdf';
 import { MenuManagementModal } from '../service/MenuManagementModal';
 import { AdminMenuManagementTab } from '../admin/AdminMenuManagementTab';
+import { verifyAdminPin } from '../../lib/verifyAdminPin';
 
 interface HorecaPortalProps {
   tickets: ServiceTicket[];
@@ -50,6 +51,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
+  const [pinVerifying, setPinVerifying] = useState(false);
   const [pendingAdminAction, setPendingAdminAction] = useState<'open_modal' | 'switch_tab'>('switch_tab');
 
   // Modals
@@ -74,20 +76,33 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
     }
   };
 
-  const handleVerifyAdminPin = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (pinInput === '102938') {
-      setIsAdminAuthenticated(true);
-      setShowPinModal(false);
-      setPinError('');
-      if (pendingAdminAction === 'open_modal') {
-        setIsMenuModalOpen(true);
-      } else {
-        setActiveTab('admin');
-      }
-      setPinInput('');
+  const grantAdminAccess = () => {
+    setIsAdminAuthenticated(true);
+    setShowPinModal(false);
+    setPinError('');
+    if (pendingAdminAction === 'open_modal') {
+      setIsMenuModalOpen(true);
     } else {
-      setPinError('Onjuiste pincode. Gebruik standaard pincode 102938.');
+      setActiveTab('admin');
+    }
+    setPinInput('');
+  };
+
+  const handleVerifyAdminPin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (pinVerifying || pinInput.length !== 6) {
+      if (pinInput.length !== 6) setPinError('Voer 6 cijfers in.');
+      return;
+    }
+    setPinVerifying(true);
+    setPinError('');
+    const result = await verifyAdminPin(pinInput);
+    setPinVerifying(false);
+    if (result.success) {
+      grantAdminAccess();
+    } else {
+      setPinError(result.error || 'Ongeldige code.');
+      setPinInput('');
     }
   };
 
@@ -1271,41 +1286,29 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
                     key={btn}
                     type="button"
                     onClick={() => {
+                      if (pinVerifying) return;
                       if (btn === 'C') {
                         setPinInput('');
                         setPinError('');
                       } else if (btn === '✓') {
-                        if (pinInput === '102938') {
-                          setIsAdminAuthenticated(true);
-                          setShowPinModal(false);
-                          if (pendingAdminAction === 'open_modal') {
-                            setIsMenuModalOpen(true);
-                          } else {
-                            setActiveTab('admin');
-                          }
-                          setPinInput('');
-                          setPinError('');
-                        } else {
-                          setPinError('Onjuiste pincode. Gebruik standaard pincode 102938.');
-                        }
+                        handleVerifyAdminPin();
                       } else if (pinInput.length < 6) {
                         const next = pinInput + btn;
                         setPinInput(next);
                         setPinError('');
                         if (next.length === 6) {
-                          if (next === '102938') {
-                            setIsAdminAuthenticated(true);
-                            setShowPinModal(false);
-                            if (pendingAdminAction === 'open_modal') {
-                              setIsMenuModalOpen(true);
-                            } else {
-                              setActiveTab('admin');
-                            }
-                            setPinInput('');
+                          (async () => {
+                            setPinVerifying(true);
                             setPinError('');
-                          } else {
-                            setPinError('Onjuiste pincode. Gebruik standaard pincode 102938.');
-                          }
+                            const result = await verifyAdminPin(next);
+                            setPinVerifying(false);
+                            if (result.success) {
+                              grantAdminAccess();
+                            } else {
+                              setPinError(result.error || 'Ongeldige code.');
+                              setPinInput('');
+                            }
+                          })();
                         }
                       }
                     }}
@@ -1323,7 +1326,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
               </div>
 
               <div className="pt-2 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">Standaard pincode: <strong>102938</strong></span>
+                <span className="text-[11px] text-slate-400">&nbsp;</span>
                 <button
                   type="button"
                   onClick={() => setShowPinModal(false)}

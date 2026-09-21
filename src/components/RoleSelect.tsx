@@ -121,14 +121,9 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold text-[#24126E]">
-                Beheerderspaneel openen
-              </span>
-              <span className="text-[10px] bg-indigo-50 text-[#24126E] px-2 py-0.5 rounded font-mono font-bold">
-                PIN: 102938
-              </span>
-            </div>
+            <span className="text-xs sm:text-sm font-bold text-[#24126E]">
+              Beheerderspaneel openen
+            </span>
             <div className="w-7 h-7 rounded-xl bg-[#24126E] text-white flex items-center justify-center transition-colors">
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
