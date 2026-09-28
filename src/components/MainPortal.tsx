@@ -275,7 +275,7 @@ export const MainPortal: React.FC<MainPortalProps> = ({
             </p>
 
             {/* Passende afbeelding voor Uitleensysteem */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[16/10] mb-5 border border-slate-100 bg-slate-100 shadow-inner group-hover:shadow-md transition-shadow">
+            <div className="relative rounded-2xl overflow-hidden aspect-square mb-5 border border-slate-100 bg-slate-100 shadow-inner group-hover:shadow-md transition-shadow">
               <img
                 src="https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=800&q=80"
                 alt="Uitleensysteem apparatuur en materialen"
@@ -328,7 +328,7 @@ export const MainPortal: React.FC<MainPortalProps> = ({
             </p>
 
             {/* Passende afbeelding voor Servicesysteem */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[16/10] mb-5 border border-slate-100 bg-slate-100 shadow-inner group-hover:shadow-md transition-shadow">
+            <div className="relative rounded-2xl overflow-hidden aspect-square mb-5 border border-slate-100 bg-slate-100 shadow-inner group-hover:shadow-md transition-shadow">
               <img
                 src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
                 alt="Servicesysteem klussen en onderhoud"
@@ -381,7 +381,7 @@ export const MainPortal: React.FC<MainPortalProps> = ({
             </p>
 
             {/* Passende afbeelding voor Horeca */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[16/10] mb-5 border border-slate-100 bg-slate-100 shadow-inner group-hover:shadow-md transition-shadow">
+            <div className="relative rounded-2xl overflow-hidden aspect-square mb-5 border border-slate-100 bg-slate-100 shadow-inner group-hover:shadow-md transition-shadow">
               <img
                 src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80"
                 alt="Horeca weekmenu en maaltijden"

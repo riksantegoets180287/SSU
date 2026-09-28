@@ -739,7 +739,7 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
                   {formPhotos.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {formPhotos.map((photo, index) => (
-                        <div key={index} className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-video group bg-slate-100">
+                        <div key={index} className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-square group bg-slate-100">
                           <img src={photo} alt={`Bijlage ${index + 1}`} className="w-full h-full object-cover" />
                           <button
                             type="button"
@@ -1456,7 +1456,7 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
                       <div
                         key={i}
                         onClick={() => setSelectedPhotoPreview(photo)}
-                        className="relative rounded-xl overflow-hidden border border-slate-200 aspect-video group bg-slate-100 cursor-pointer hover:opacity-90 transition-opacity"
+                        className="relative rounded-xl overflow-hidden border border-slate-200 aspect-square group bg-slate-100 cursor-pointer hover:opacity-90 transition-opacity"
                       >
                         <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">

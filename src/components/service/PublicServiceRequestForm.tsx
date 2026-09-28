@@ -644,7 +644,7 @@ export const PublicServiceRequestForm: React.FC<PublicServiceRequestFormProps> =
                         >
                           <div>
                             {/* Dish image with badge */}
-                            <div className="relative rounded-xl overflow-hidden aspect-[16/10] mb-3 bg-slate-100 border border-slate-200/80 shadow-inner">
+                            <div className="relative rounded-xl overflow-hidden aspect-square mb-3 bg-slate-100 border border-slate-200/80 shadow-inner">
                               <img
                                 src={dish.imageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80'}
                                 alt={dish.name}
@@ -1298,7 +1298,7 @@ export const PublicServiceRequestForm: React.FC<PublicServiceRequestFormProps> =
                     {photos.length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {photos.map((photo, index) => (
-                          <div key={index} className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-video group bg-slate-100">
+                          <div key={index} className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-square group bg-slate-100">
                             <img src={photo} alt={`Bijlage ${index + 1}`} className="w-full h-full object-cover" />
                             <button
                               type="button"

@@ -15,6 +15,7 @@ import {
 import { Material, Category } from '../../types';
 import { BarcodeRenderer } from '../common/BarcodeRenderer';
 import { BarcodePrintModal } from '../desk/BarcodePrintModal';
+import { generateRandomEAN13, isValidEAN13, calculateEAN13CheckDigit } from '../../lib/barcode';
 
 interface BarcodeManagementTabProps {
   materials: Material[];
@@ -42,23 +43,28 @@ export const BarcodeManagementTab: React.FC<BarcodeManagementTabProps> = ({
 
   const handleStartEdit = (mat: Material) => {
     setEditingId(mat.id);
-    setEditValue(mat.optionalBarcode || `SMP-${mat.id.toUpperCase().replace(/[^A-Z0-9]/g, '')}`);
+    const current = mat.optionalBarcode || '';
+    setEditValue(current);
   };
 
   const handleSaveBarcode = (materialId: string) => {
-    if (editValue.trim()) {
-      onUpdateMaterialBarcode(materialId, editValue.trim().toUpperCase());
+    const cleaned = editValue.replace(/\D/g, '');
+    if (cleaned.length === 13 && isValidEAN13(cleaned)) {
+      onUpdateMaterialBarcode(materialId, cleaned);
+      setEditingId(null);
+    } else if (cleaned.length === 12) {
+      const full = cleaned + calculateEAN13CheckDigit(cleaned);
+      onUpdateMaterialBarcode(materialId, full);
+      setEditingId(null);
+    } else {
+      setEditingId(null);
     }
-    setEditingId(null);
   };
 
   const handleAutoGenerateAll = () => {
     materials.forEach(m => {
-      if (!m.optionalBarcode) {
-        const cat = categories.find(c => c.id === m.categoryId);
-        const prefix = cat ? cat.name.slice(0, 3).toUpperCase() : 'SMP';
-        const code = `${prefix}-${Math.floor(100 + Math.random() * 900)}`;
-        onUpdateMaterialBarcode(m.id, code);
+      if (!m.optionalBarcode || !isValidEAN13(m.optionalBarcode)) {
+        onUpdateMaterialBarcode(m.id, generateRandomEAN13());
       }
     });
   };
@@ -128,7 +134,9 @@ export const BarcodeManagementTab: React.FC<BarcodeManagementTabProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredMaterials.map((material) => {
           const category = categories.find(c => c.id === material.categoryId);
-          const currentBarcode = material.optionalBarcode || `SMP-${material.id.toUpperCase().replace(/[^A-Z0-9]/g, '')}`;
+          const currentBarcode = material.optionalBarcode && isValidEAN13(material.optionalBarcode)
+            ? material.optionalBarcode
+            : generateRandomEAN13();
           const isEditing = editingId === material.id;
 
           return (
@@ -169,9 +177,11 @@ export const BarcodeManagementTab: React.FC<BarcodeManagementTabProps> = ({
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      placeholder="Barcode code..."
+                      placeholder="13 cijfers (EAN-13)..."
                       className="flex-1 px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-[#24126E] focus:outline-none focus:ring-2 focus:ring-[#D70096]"
                       autoFocus
+                      maxLength={13}
+                      inputMode="numeric"
                     />
                     <button
                       onClick={() => handleSaveBarcode(material.id)}

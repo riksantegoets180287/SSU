@@ -1,50 +1,109 @@
 /**
- * Clean Code 128 Barcode Generator for Summa Plus
- * Generates valid Code 128 (subset B) SVG bars directly without external dependencies.
+ * EAN-13 Barcode Generator for Summa Plus
+ * Generates valid EAN-13 SVG bars (13 numeric digits including check digit).
  */
 
-// Code 128 Character Patterns (Subset B)
-const CODE128_PATTERNS: string[] = [
-  '212222', '222122', '222221', '121223', '121322', '131222', '122213', '122312', '132212', '221213',
-  '221312', '231212', '112232', '122132', '122231', '113222', '123122', '123221', '223211', '221132',
-  '221231', '213212', '223112', '312131', '311222', '321122', '321221', '312212', '322112', '322211',
-  '212123', '212321', '232121', '111323', '131123', '131321', '112313', '132113', '132311', '211313',
-  '231113', '231311', '112133', '112331', '132131', '113123', '113321', '133121', '313121', '211331',
-  '231131', '213113', '213311', '213131', '311123', '311321', '331121', '312113', '312311', '332111',
-  '314111', '221411', '431111', '111224', '111422', '121124', '121421', '141122', '141221', '112214',
-  '112412', '122114', '122411', '142112', '142211', '241211', '221114', '413111', '241112', '134111',
-  '111242', '121142', '121241', '114212', '124112', '124211', '411212', '421112', '421211', '212141',
-  '214121', '412121', '111143', '111341', '131141', '114113', '114311', '411113', '411311', '113141',
-  '114131', '311141', '411131', '211412', '211214', '211232', '23311120'
+// EAN-13 encoding tables
+// First digit (number system) determines which parity pattern to use for the left 6 digits
+const PARITY_PATTERNS: Record<string, string[]> = {
+  '0': ['LLLLLL', 'RRRRRR'],
+  '1': ['LLGLGG', 'RRRRRR'],
+  '2': ['LLGGLG', 'RRRRRR'],
+  '3': ['LLGGGL', 'RRRRRR'],
+  '4': ['LGLLGG', 'RRRRRR'],
+  '5': ['LGGLLG', 'RRRRRR'],
+  '6': ['LGGGLL', 'RRRRRR'],
+  '7': ['LGLGLG', 'RRRRRR'],
+  '8': ['LGLGGL', 'RRRRRR'],
+  '9': ['LGGLGL', 'RRRRRR'],
+};
+
+// L-pattern (odd parity) for digits 0-9
+const L_PATTERNS: string[] = [
+  '0001101', '0011001', '0010011', '0111101', '0100011',
+  '0110001', '0101111', '0111011', '0110111', '0001011',
 ];
 
-const START_CODE_B = 104;
-const STOP_CODE = 106;
+// G-pattern (even parity) for digits 0-9
+const G_PATTERNS: string[] = [
+  '0100111', '0110011', '0011011', '0100001', '0011101',
+  '0111001', '0000101', '0010001', '0001001', '0010111',
+];
 
+// R-pattern for digits 0-9 (mirror of L)
+const R_PATTERNS: string[] = [
+  '1110010', '1100110', '1101100', '1000010', '1011100',
+  '1001110', '1010000', '1000100', '1001000', '1110100',
+];
+
+// Guard bars
+const START_GUARD = '101';
+const CENTER_GUARD = '01010';
+const END_GUARD = '101';
+
+/**
+ * Calculate the EAN-13 check digit from the first 12 digits.
+ */
+export function calculateEAN13CheckDigit(twelveDigits: string): string {
+  const digits = twelveDigits.split('').map(Number);
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+  }
+  const check = (10 - (sum % 10)) % 10;
+  return String(check);
+}
+
+/**
+ * Validate that a string is a valid 13-digit EAN-13 code with correct check digit.
+ */
+export function isValidEAN13(code: string): boolean {
+  if (!/^\d{13}$/.test(code)) return false;
+  const expected = calculateEAN13CheckDigit(code.slice(0, 12));
+  return code[12] === expected;
+}
+
+/**
+ * Generate the bar pattern string for a 13-digit EAN-13 code.
+ * Returns a string of 0s and 1s representing bars and spaces.
+ */
 export function generateBarcodePattern(text: string): string {
-  const cleanText = text.trim() || 'SUMMA';
-  const codes: number[] = [START_CODE_B];
-
-  // Encode each char (ASCII 32 to 126)
-  for (let i = 0; i < cleanText.length; i++) {
-    const charCode = cleanText.charCodeAt(i);
-    const val = charCode >= 32 && charCode <= 126 ? charCode - 32 : 0;
-    codes.push(val);
+  // Ensure we have exactly 13 digits
+  let digits = text.replace(/\D/g, '');
+  if (digits.length < 13) {
+    // Pad with leading zeros to 12, then calculate check digit
+    digits = digits.padStart(12, '0');
+    digits = digits + calculateEAN13CheckDigit(digits);
+  } else if (digits.length > 13) {
+    digits = digits.slice(0, 13);
   }
 
-  // Calculate Checksum
-  let checksum = codes[0];
-  for (let i = 1; i < codes.length; i++) {
-    checksum += codes[i] * i;
-  }
-  codes.push(checksum % 103);
-  codes.push(STOP_CODE);
+  const firstDigit = digits[0];
+  const leftDigits = digits.slice(1, 7);
+  const rightDigits = digits.slice(7, 13);
 
-  // Convert codes to pattern string
-  let pattern = '';
-  for (const code of codes) {
-    pattern += CODE128_PATTERNS[code] || CODE128_PATTERNS[0];
+  const parity = PARITY_PATTERNS[firstDigit] || PARITY_PATTERNS['0'];
+  const parityPattern = parity[0];
+
+  let pattern = START_GUARD;
+
+  // Left 6 digits with L/G parity
+  for (let i = 0; i < 6; i++) {
+    const d = Number(leftDigits[i]);
+    const useG = parityPattern[i] === 'G';
+    pattern += useG ? G_PATTERNS[d] : L_PATTERNS[d];
   }
+
+  pattern += CENTER_GUARD;
+
+  // Right 6 digits always R-pattern
+  for (let i = 0; i < 6; i++) {
+    const d = Number(rightDigits[i]);
+    pattern += R_PATTERNS[d];
+  }
+
+  pattern += END_GUARD;
+
   return pattern;
 }
 
@@ -57,7 +116,7 @@ export interface BarcodeSVGProps {
 }
 
 /**
- * Generates an SVG string representation of a Code 128 Barcode
+ * Generates an SVG string representation of an EAN-13 Barcode
  */
 export function generateBarcodeSVGString({
   value,
@@ -67,32 +126,26 @@ export function generateBarcodeSVGString({
   showText = true,
 }: BarcodeSVGProps): string {
   const pattern = generateBarcodePattern(value);
-  
-  // Calculate total module width
-  let totalModules = 0;
-  for (let i = 0; i < pattern.length; i++) {
-    totalModules += parseInt(pattern[i], 10);
-  }
 
-  const quietZone = 10;
-  const totalWidth = totalModules + (quietZone * 2);
-  const barHeight = showText ? height - 18 : height;
-
-  let x = quietZone;
+  let x = 0;
   let isBar = true;
   let rects = '';
+  const barHeight = showText ? height - 18 : height;
 
   for (let i = 0; i < pattern.length; i++) {
-    const moduleWidth = parseInt(pattern[i], 10);
+    const w = parseInt(pattern[i], 10);
     if (isBar) {
-      rects += `<rect x="${x}" y="0" width="${moduleWidth}" height="${barHeight}" fill="#24126E" />`;
+      rects += `<rect x="${x}" y="0" width="${w}" height="${barHeight}" fill="#24126E" />`;
     }
-    x += moduleWidth;
+    x += w;
     isBar = !isBar;
   }
 
+  const totalWidth = x;
+  const displayValue = (value.replace(/\D/g, '')).padStart(13, '0').slice(0, 13);
+
   const textElement = showText
-    ? `<text x="${totalWidth / 2}" y="${height - 2}" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#24126E">${label || value}</text>`
+    ? `<text x="${totalWidth / 2}" y="${height - 2}" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#24126E">${label || displayValue}</text>`
     : '';
 
   return `
@@ -101,6 +154,31 @@ export function generateBarcodeSVGString({
       ${textElement}
     </svg>
   `;
+}
+
+/**
+ * Generate a random valid 13-digit EAN-13 code.
+ * Uses prefix 20-29 (internal/in-store range, not conflicting with GS1 prefixes).
+ */
+export function generateRandomEAN13(): string {
+  const prefix = String(20 + Math.floor(Math.random() * 10)); // 20-29
+  let code = prefix;
+  while (code.length < 12) {
+    code += Math.floor(Math.random() * 10);
+  }
+  return code + calculateEAN13CheckDigit(code);
+}
+
+/**
+ * Generate a unique EAN-13 code with a serial number suffix.
+ * Used for per-quantity unique barcodes.
+ */
+export function generateUniqueEAN13(baseIndex: number): string {
+  // Use prefix 200 + 9-digit serial, then check digit
+  let code = '200';
+  const serial = String(baseIndex).padStart(9, '0').slice(0, 9);
+  code += serial;
+  return code + calculateEAN13CheckDigit(code);
 }
 
 /**

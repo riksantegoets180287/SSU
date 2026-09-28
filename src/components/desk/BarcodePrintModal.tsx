@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Barcode, Printer, X, Check, Copy, Download, Layers, Sparkles, Sliders } from 'lucide-react';
 import { Material, Category } from '../../types';
 import { BarcodeRenderer } from '../common/BarcodeRenderer';
+import { generateRandomEAN13, generateUniqueEAN13, isValidEAN13 } from '../../lib/barcode';
 
 interface BarcodePrintModalProps {
   isOpen: boolean;
@@ -48,7 +49,9 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({
 
   filteredMaterials.forEach((material) => {
     const category = categories.find(c => c.id === material.categoryId);
-    const baseCode = material.optionalBarcode || `SMP-${material.id.toUpperCase().replace(/[^A-Z0-9]/g, '')}`;
+    const baseCode = material.optionalBarcode && isValidEAN13(material.optionalBarcode)
+      ? material.optionalBarcode
+      : generateRandomEAN13();
     const qty = Math.max(1, material.totalQuantity || 1);
 
     if (printMode === 'per_item') {
@@ -75,10 +78,9 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({
         });
       }
     } else if (printMode === 'per_quantity_unique') {
-      // Unique serialised variants: e.g. SMP-HDMI-01, SMP-HDMI-02...
+      // Unique serialised variants: unique EAN-13 per item
       for (let i = 1; i <= qty; i++) {
-        const paddedIndex = String(i).padStart(2, '0');
-        const variantCode = `${baseCode}-${paddedIndex}`;
+        const variantCode = generateUniqueEAN13(i);
         printableLabels.push({
           uniqueKey: `${material.id}-var-${i}`,
           material,

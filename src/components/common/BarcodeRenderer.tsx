@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { generateBarcodePattern } from '../../lib/barcode';
+import { generateBarcodePattern, isValidEAN13 } from '../../lib/barcode';
 
 interface BarcodeRendererProps {
   value: string;
@@ -20,30 +20,52 @@ export const BarcodeRenderer: React.FC<BarcodeRendererProps> = ({
 }) => {
   const pattern = useMemo(() => generateBarcodePattern(value), [value]);
 
-  const { rects, totalWidth } = useMemo(() => {
-    let totalModules = 0;
-    for (let i = 0; i < pattern.length; i++) {
-      totalModules += parseInt(pattern[i], 10);
-    }
+  const displayValue = useMemo(() => {
+    const digits = value.replace(/\D/g, '').padStart(13, '0').slice(0, 13);
+    return digits;
+  }, [value]);
 
-    const quietZone = 8;
-    const computedTotalWidth = totalModules + quietZone * 2;
-    const barHeight = showText ? height - 16 : height;
+  const isValid = useMemo(() => isValidEAN13(displayValue), [displayValue]);
 
+  const { rects, totalWidth, guardBars } = useMemo(() => {
+    const quietZone = 7;
     let x = quietZone;
     let isBar = true;
     const bars: { x: number; width: number; height: number }[] = [];
+    const guards: { x: number; width: number }[] = [];
+
+    // Track positions of guard bars for longer height
+    // Guard bars are at: start (positions 0-2), center (positions 45-49), end (positions 95-97)
+    // In the pattern string (excluding quiet zone):
+    // Start guard: indices 0,1,2 (3 modules)
+    // Center guard: indices 45-49 (5 modules)
+    // End guard: indices 95-97 (3 modules)
+    let moduleIndex = 0;
+    const startGuardEnd = 3;
+    const centerGuardStart = 45;
+    const centerGuardEnd = 50;
+    const endGuardStart = 95;
 
     for (let i = 0; i < pattern.length; i++) {
-      const moduleWidth = parseInt(pattern[i], 10);
+      const w = parseInt(pattern[i], 10);
       if (isBar) {
-        bars.push({ x, width: moduleWidth, height: barHeight });
+        const isGuard = moduleIndex < startGuardEnd ||
+          (moduleIndex >= centerGuardStart && moduleIndex < centerGuardEnd) ||
+          moduleIndex >= endGuardStart;
+        const barH = isGuard ? height - 6 : (showText ? height - 18 : height - 6);
+        bars.push({ x, width: w, height: barH });
+        if (isGuard) guards.push({ x, width: w });
       }
-      x += moduleWidth;
+      x += w;
       isBar = !isBar;
+      moduleIndex++;
     }
 
-    return { rects: bars, totalWidth: computedTotalWidth };
+    return {
+      rects: bars,
+      totalWidth: x + quietZone,
+      guardBars: guards,
+    };
   }, [pattern, height, showText]);
 
   return (
@@ -70,14 +92,19 @@ export const BarcodeRenderer: React.FC<BarcodeRendererProps> = ({
             fontFamily="monospace"
             fontSize="11"
             fontWeight="bold"
-            letterSpacing="0.08em"
+            letterSpacing="0.12em"
             textAnchor="middle"
             fill="#24126E"
           >
-            {label || value}
+            {label || displayValue}
           </text>
         )}
       </svg>
+      {!isValid && (
+        <span className="text-[9px] text-amber-600 font-bold mt-0.5">
+          Ongeldige EAN-13
+        </span>
+      )}
     </div>
   );
 };
