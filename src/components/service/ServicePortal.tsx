@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Wrench, Plus, Search, ListFilter as Filter, CircleCheck as CheckCircle2, Clock, CircleAlert as AlertCircle, TriangleAlert as AlertTriangle, MapPin, User, Calendar, Layers, Tv, Building2, Armchair, Sparkles, Send, X, ArrowLeft, MessageSquare, ChevronRight, LayoutGrid, List as ListIcon, Circle as HelpCircle, Tag, Phone, Mail, ShieldCheck, Check, Camera, Image as ImageIcon, Users, GraduationCap, Briefcase, Eye, Download, Link2, Lock, Archive, Clock as Unlock, KeyRound, FileDown, Utensils, ChefHat } from 'lucide-react';
 import { ServiceTicket, TicketCategory, TicketPriority, TicketStatus, StudentWorker, SupervisingTeacher, MenuItem } from '../../types';
 import { generateTicketReceiptPdf } from '../../utils/ticketReceiptPdf';
@@ -66,7 +66,15 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'horeca' | 'klusjes'>('all');
-  const [currentMenuItems, setCurrentMenuItems] = useState<MenuItem[]>(() => propMenuItems && propMenuItems.length > 0 ? propMenuItems : getStoredMenuItems());
+  const [currentMenuItems, setCurrentMenuItems] = useState<MenuItem[]>(() => propMenuItems && propMenuItems.length > 0 ? propMenuItems : []);
+
+  useEffect(() => {
+    if (propMenuItems && propMenuItems.length > 0) {
+      setCurrentMenuItems(propMenuItems);
+    } else if (currentMenuItems.length === 0) {
+      getStoredMenuItems().then(setCurrentMenuItems);
+    }
+  }, [propMenuItems]);
 
   const handleUpdateMenuItems = (items: MenuItem[]) => {
     setCurrentMenuItems(items);

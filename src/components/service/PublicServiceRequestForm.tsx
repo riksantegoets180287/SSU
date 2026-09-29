@@ -117,8 +117,21 @@ export const PublicServiceRequestForm: React.FC<PublicServiceRequestFormProps> =
   const [createdTicket, setCreatedTicket] = useState<ServiceTicket | null>(null);
 
   // Available dishes & current tickets for quota calculation
-  const dishes = propMenuItems && propMenuItems.length > 0 ? propMenuItems : getStoredMenuItems();
-  const currentTickets = propTickets && propTickets.length > 0 ? propTickets : getStoredTickets();
+  const [dishes, setDishes] = useState<MenuItem[]>(() => propMenuItems && propMenuItems.length > 0 ? propMenuItems : []);
+  const [currentTickets, setCurrentTickets] = useState<ServiceTicket[]>(() => propTickets && propTickets.length > 0 ? propTickets : []);
+
+  useEffect(() => {
+    if (propMenuItems && propMenuItems.length > 0) {
+      setDishes(propMenuItems);
+    } else if (dishes.length === 0) {
+      getStoredMenuItems().then(setDishes);
+    }
+    if (propTickets && propTickets.length > 0) {
+      setCurrentTickets(propTickets);
+    } else if (currentTickets.length === 0) {
+      getStoredTickets().then(setCurrentTickets);
+    }
+  }, [propMenuItems, propTickets]);
 
   // URL search parameter detection on mount
   useEffect(() => {

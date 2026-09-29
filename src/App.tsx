@@ -33,7 +33,12 @@ import {
   calculateAvailableQuantity, 
   getDutchCurrentDateTime, 
   formatDutchDateTime, 
-  resetToSeedData, 
+  resetToSeedData,
+  deleteMaterial,
+  deleteCategory,
+  deleteStudent,
+  deleteTeacher,
+  deleteTicket,
   INITIAL_CATEGORIES, 
   INITIAL_MATERIALS, 
   INITIAL_TICKETS,
@@ -91,27 +96,33 @@ export default function App() {
   // Toast notification state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
 
-  // Initialize from storage on mount
+  // Initialize from Supabase on mount
   useEffect(() => {
-    const loadedCategories = getStoredCategories();
-    const loadedMaterials = getStoredMaterials();
-    const loadedLoans = getStoredLoans();
-    const loadedTickets = getStoredTickets();
-    const loadedStudents = getStoredStudents();
-    const loadedTeachers = getStoredTeachers();
-    const loadedMenuItems = getStoredMenuItems();
+    let cancelled = false;
+    (async () => {
+      const [loadedCategories, loadedMaterials, loadedLoans, loadedTickets, loadedStudents, loadedTeachers, loadedMenuItems] = await Promise.all([
+        getStoredCategories(),
+        getStoredMaterials(),
+        getStoredLoans(),
+        getStoredTickets(),
+        getStoredStudents(),
+        getStoredTeachers(),
+        getStoredMenuItems(),
+      ]);
+      if (cancelled) return;
+      setCategories(loadedCategories);
+      setMaterials(loadedMaterials);
+      setLoans(loadedLoans);
+      setTickets(loadedTickets);
+      setStudents(loadedStudents);
+      setTeachers(loadedTeachers);
+      setMenuItems(loadedMenuItems);
+    })();
     const loadedSession = getStoredSession();
-
-    setCategories(loadedCategories);
-    setMaterials(loadedMaterials);
-    setLoans(loadedLoans);
-    setTickets(loadedTickets);
-    setStudents(loadedStudents);
-    setTeachers(loadedTeachers);
-    setMenuItems(loadedMenuItems);
     if (loadedSession) {
       setUserSession(loadedSession);
     }
+    return () => { cancelled = true; };
   }, []);
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -182,7 +193,7 @@ export default function App() {
     return { success: true, loan: newLoan };
   };
 
-  // Balie Desk Borrow Action (Direct checkout by Baliemedewerker)
+  // Balie Desk Borrow Action
   const handleDeskBorrow = (
     material: Material,
     quantity: number,
@@ -221,7 +232,7 @@ export default function App() {
     return { success: true, loan: newLoan };
   };
 
-  // Return Loan Action with Condition & Partial Return Support
+  // Return Loan Action
   const handleReturnLoan = (
     loanId: string, 
     condition: LoanReturnCondition = 'goed', 
@@ -280,7 +291,7 @@ export default function App() {
     setLoans(updatedLoans);
     saveLoans(updatedLoans);
 
-    // If defect and automatically creating a service ticket
+    // If defect and creating a service ticket
     if (createServiceTicket) {
       handleAddTicket({
         title: `Defect geretourneerd (${qtyToReturn}x): ${targetLoan.materialName}`,
@@ -333,7 +344,7 @@ export default function App() {
     const target = materials.find(m => m.id === materialId);
     const updated = materials.filter(m => m.id !== materialId);
     setMaterials(updated);
-    saveMaterials(updated);
+    deleteMaterial(materialId);
     showToast(`Materiaal "${target?.name || 'Item'}" verwijderd.`, 'info');
   };
 
@@ -374,7 +385,7 @@ export default function App() {
     }
     const updated = categories.filter(c => c.id !== categoryId);
     setCategories(updated);
-    saveCategories(updated);
+    deleteCategory(categoryId);
     showToast('Categorie verwijderd.', 'info');
   };
 
@@ -393,7 +404,7 @@ export default function App() {
   const handleDeleteStudent = (studentId: string) => {
     const updated = students.filter(s => s.id !== studentId);
     setStudents(updated);
-    saveStudents(updated);
+    deleteStudent(studentId);
     showToast('Student verwijderd.', 'info');
   };
 
@@ -418,7 +429,7 @@ export default function App() {
   const handleDeleteTeacher = (teacherId: string) => {
     const updated = teachers.filter(t => t.id !== teacherId);
     setTeachers(updated);
-    saveTeachers(updated);
+    deleteTeacher(teacherId);
     showToast('Begeleidend docent verwijderd.', 'info');
   };
 
@@ -516,7 +527,7 @@ export default function App() {
   const handleDeleteTicket = (ticketId: string) => {
     const updated = tickets.filter(t => t.id !== ticketId);
     setTickets(updated);
-    saveTickets(updated);
+    deleteTicket(ticketId);
     showToast('Ticket definitief verwijderd.', 'info');
   };
 
