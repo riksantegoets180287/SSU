@@ -343,7 +343,7 @@ export const UserCatalog: React.FC<UserCatalogProps> = ({
                 >
                   <div>
                     {/* Visual Area */}
-                    <div className="h-36 bg-[#F7F5FA] rounded-2xl mb-4 flex items-center justify-center relative overflow-hidden">
+                    <div className="aspect-square bg-[#F7F5FA] rounded-2xl mb-4 flex items-center justify-center relative overflow-hidden">
                       {material.optionalImageUrl ? (
                         <img
                           src={material.optionalImageUrl}

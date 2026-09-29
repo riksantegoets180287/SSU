@@ -634,7 +634,7 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
 
                         {/* Image or Icon Placeholder */}
                         {material.optionalImageUrl ? (
-                          <div className="h-32 w-full rounded-2xl overflow-hidden bg-[#F7F5FA] mb-3 relative">
+                          <div className="aspect-square w-full rounded-2xl overflow-hidden bg-[#F7F5FA] mb-3 relative">
                             <img
                               src={material.optionalImageUrl}
                               alt={material.name}
