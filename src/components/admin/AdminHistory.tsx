@@ -10,10 +10,11 @@ import {
   Package, 
   ArrowRight,
   FileSpreadsheet,
-  Layers
+  Layers,
+  AlertTriangle
 } from 'lucide-react';
 import { Loan, Category } from '../../types';
-import { formatDutchDateTime } from '../../lib/storage';
+import { formatDutchDateTime, formatDutchDate, isLoanOverdue } from '../../lib/storage';
 
 interface AdminHistoryProps {
   loans: Loan[];
@@ -175,21 +176,28 @@ export const AdminHistory: React.FC<AdminHistoryProps> = ({ loans, categories })
                   <th className="px-4 py-3.5">Materiaal & Categorie</th>
                   <th className="px-4 py-3.5">Aantal</th>
                   <th className="px-4 py-3.5">Geleend op</th>
+                  <th className="px-4 py-3.5">Retourdatum</th>
                   <th className="px-5 py-3.5">Ingeleverd op</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0EBF7]">
                 {filteredLoans.map((loan) => {
                   const isReturned = loan.status === 'teruggebracht';
+                  const overdue = isLoanOverdue(loan);
 
                   return (
-                    <tr key={loan.id} className="hover:bg-[#FDF0F8]/30 transition-colors">
+                    <tr key={loan.id} className={`transition-colors ${overdue ? 'bg-red-50/40 hover:bg-red-50' : 'hover:bg-[#FDF0F8]/30'}`}>
                       {/* Status Badge */}
                       <td className="px-5 py-4">
                         {isReturned ? (
                           <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-lg">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                             Teruggebracht
+                          </span>
+                        ) : overdue ? (
+                          <span className="inline-flex items-center gap-1 bg-red-100 text-red-800 text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                            <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                            Te laat
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 bg-[#FDF0F8] text-[#D70096] text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#D70096]/20">
@@ -234,6 +242,18 @@ export const AdminHistory: React.FC<AdminHistoryProps> = ({ loans, categories })
                       <td className="px-4 py-4 text-[#645E78] text-[11px]">
                         <p className="font-medium text-[#24126E]">{loan.borrowedAtDate}</p>
                         <p className="text-[10px]">{loan.borrowedAtTime} uur</p>
+                      </td>
+
+                      {/* Return Due Date */}
+                      <td className="px-4 py-4">
+                        {loan.returnDueDate ? (
+                          <span className={`text-[11px] font-semibold flex items-center gap-1 ${overdue && !isReturned ? 'text-red-700' : 'text-[#24126E]'}`}>
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formatDutchDate(loan.returnDueDate)}
+                          </span>
+                        ) : (
+                          <span className="text-[#645E78]/50 italic text-[11px]">-</span>
+                        )}
                       </td>
 
                       {/* Returned Date */}

@@ -31,7 +31,8 @@ import {
   getStoredSession, 
   saveSession, 
   calculateAvailableQuantity, 
-  getDutchCurrentDateTime, 
+  getDutchCurrentDateTime,
+  getEndOfTodayISODate,
   formatDutchDateTime, 
   resetToSeedData,
   deleteMaterial,
@@ -184,6 +185,7 @@ export default function App() {
       borrowedAtDate: dateStr,
       borrowedAtTime: timeStr,
       status: 'uitgeleend',
+      returnDueDate: getEndOfTodayISODate(),
     };
 
     const updatedLoans = [newLoan, ...loans];
@@ -198,7 +200,8 @@ export default function App() {
     material: Material,
     quantity: number,
     borrowerName: string,
-    borrowerTeam: string
+    borrowerTeam: string,
+    returnDueDate?: string
   ): { success: boolean; loan?: Loan; error?: string } => {
     const available = calculateAvailableQuantity(material, loans);
     if (quantity <= 0) {
@@ -222,6 +225,7 @@ export default function App() {
       borrowedAtDate: dateStr,
       borrowedAtTime: timeStr,
       status: 'uitgeleend',
+      returnDueDate: returnDueDate || getEndOfTodayISODate(),
     };
 
     const updatedLoans = [newLoan, ...loans];
@@ -757,6 +761,7 @@ export default function App() {
                 loans={loans}
                 tickets={tickets}
                 students={students}
+                teachers={teachers}
                 menuItems={menuItems}
                 onSaveMenuItems={handleSaveMenuItems}
                 onAddMaterial={handleAddMaterial}
@@ -770,6 +775,9 @@ export default function App() {
                 onAddStudent={handleAddStudent}
                 onDeleteStudent={handleDeleteStudent}
                 onToggleStudentActive={handleToggleStudentActive}
+                onAddTeacher={handleAddTeacher}
+                onDeleteTeacher={handleDeleteTeacher}
+                onToggleTeacherActive={handleToggleTeacherActive}
                 onExitAdmin={async () => {
                   await adminSession.logout();
                   setCurrentView('role_select');

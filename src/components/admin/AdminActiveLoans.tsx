@@ -13,6 +13,7 @@ import {
   ArrowDownLeft
 } from 'lucide-react';
 import { Loan } from '../../types';
+import { isLoanOverdue, formatDutchDate } from '../../lib/storage';
 
 interface AdminActiveLoansProps {
   loans: Loan[];
@@ -105,15 +106,17 @@ export const AdminActiveLoans: React.FC<AdminActiveLoansProps> = ({
                   <th className="px-4 py-3.5">Materiaal & Categorie</th>
                   <th className="px-4 py-3.5">Aantal</th>
                   <th className="px-4 py-3.5">Uitgeleend op</th>
+                  <th className="px-4 py-3.5">Retourdatum</th>
                   <th className="px-5 py-3.5 text-right">Actie</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0EBF7]">
                 {filteredLoans.map((loan) => {
                   const isProcessing = returningId === loan.id;
+                  const overdue = isLoanOverdue(loan);
 
                   return (
-                    <tr key={loan.id} className="hover:bg-[#FDF0F8]/30 transition-colors">
+                    <tr key={loan.id} className={`transition-colors ${overdue ? 'bg-red-50/40 hover:bg-red-50' : 'hover:bg-[#FDF0F8]/30'}`}>
                       {/* Borrower */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
@@ -163,6 +166,21 @@ export const AdminActiveLoans: React.FC<AdminActiveLoansProps> = ({
                             <span>{loan.borrowedAtTime} uur</span>
                           </div>
                         </div>
+                      </td>
+
+                      {/* Return Due Date */}
+                      <td className="px-4 py-4">
+                        {loan.returnDueDate ? (
+                          <div className={`text-[11px] font-semibold flex items-center gap-1 ${overdue ? 'text-red-700' : 'text-[#24126E]'}`}>
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>{formatDutchDate(loan.returnDueDate)}</span>
+                            {overdue && (
+                              <span className="text-[9px] font-bold uppercase bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Te laat</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[#645E78]/50 italic text-[11px]">-</span>
+                        )}
                       </td>
 
                       {/* Return Action Button */}

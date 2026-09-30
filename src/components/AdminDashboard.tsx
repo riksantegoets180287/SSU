@@ -16,9 +16,11 @@ import {
   Barcode,
   Users,
   Printer,
+  Briefcase,
+  ClipboardList,
   Utensils
 } from 'lucide-react';
-import { AdminTab, Material, Category, Loan, ServiceTicket, StudentWorker, MenuItem } from '../types';
+import { AdminTab, Material, Category, Loan, ServiceTicket, StudentWorker, SupervisingTeacher, MenuItem } from '../types';
 import { AdminMaterials } from './admin/AdminMaterials';
 import { AdminCategories } from './admin/AdminCategories';
 import { AdminActiveLoans } from './admin/AdminActiveLoans';
@@ -26,8 +28,10 @@ import { AdminHistory } from './admin/AdminHistory';
 import { AnalyticsDashboard } from './admin/AnalyticsDashboard';
 import { BarcodeManagementTab } from './admin/BarcodeManagementTab';
 import { StudentManagementTab } from './admin/StudentManagementTab';
+import { TeacherManagementTab } from './admin/TeacherManagementTab';
+import { AdminBalanceList } from './admin/AdminBalanceList';
 import { AdminMenuManagementTab } from './admin/AdminMenuManagementTab';
-import { calculateAvailableQuantity } from '../lib/storage';
+import { calculateAvailableQuantity, isLoanOverdue } from '../lib/storage';
 
 interface AdminDashboardProps {
   categories: Category[];
@@ -35,6 +39,7 @@ interface AdminDashboardProps {
   loans: Loan[];
   tickets: ServiceTicket[];
   students: StudentWorker[];
+  teachers: SupervisingTeacher[];
   menuItems?: MenuItem[];
   onSaveMenuItems?: (items: MenuItem[]) => void;
   onAddMaterial: (data: Omit<Material, 'id' | 'createdAt'>) => void;
@@ -48,6 +53,9 @@ interface AdminDashboardProps {
   onAddStudent: (student: Omit<StudentWorker, 'id'>) => void;
   onDeleteStudent: (studentId: string) => void;
   onToggleStudentActive: (studentId: string) => void;
+  onAddTeacher: (teacher: Omit<SupervisingTeacher, 'id'>) => void;
+  onDeleteTeacher: (teacherId: string) => void;
+  onToggleTeacherActive: (teacherId: string) => void;
   onExitAdmin: () => void;
   onResetToStandardMaterials?: () => void;
 }
@@ -58,6 +66,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   loans,
   tickets,
   students,
+  teachers,
   menuItems,
   onSaveMenuItems,
   onAddMaterial,
@@ -71,6 +80,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddStudent,
   onDeleteStudent,
   onToggleStudentActive,
+  onAddTeacher,
+  onDeleteTeacher,
+  onToggleTeacherActive,
   onExitAdmin,
   onResetToStandardMaterials,
 }) => {
@@ -80,6 +92,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const totalMaterialsCount = materials.length;
   const activeLoansCount = loans.filter(l => l.status === 'uitgeleend').length;
   const totalCategoriesCount = categories.length;
+  const overdueLoansCount = loans.filter(l => isLoanOverdue(l)).length;
 
   // Unavailable or low stock items (<= 2 available or 0)
   const lowOrOutOfStockCount = materials.filter(m => {
@@ -111,7 +124,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
 
       {/* 4 KPI Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Materials */}
         <div 
           onClick={() => setActiveTab('materials')}
@@ -175,8 +188,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </p>
         </div>
 
+        {/* Overdue */}
+        <div
+          onClick={() => setActiveTab('active_loans')}
+          className={`bg-white rounded-3xl p-5 border transition-all cursor-pointer shadow-xs hover:shadow-md ${
+            activeTab === 'active_loans' ? 'border-red-400 ring-2 ring-red-100' : 'border-slate-100'
+          } ${overdueLoansCount === 0 ? 'opacity-60' : ''}`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Te laat</span>
+            <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-200">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-red-600">
+            {overdueLoansCount}
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Niet tijdig geretourneerd
+          </p>
+        </div>
+
         {/* Low / Out of Stock */}
-        <div 
+        <div
           onClick={() => setActiveTab('materials')}
           className="bg-white rounded-3xl p-5 border border-slate-100 transition-all cursor-pointer shadow-xs hover:shadow-md"
         >
@@ -197,7 +231,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* Main Navigation Tabs */}
       <div className="border-b border-slate-200">
-        <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto pb-px scrollbar-none">
+        <nav className="flex flex-wrap gap-x-2 sm:gap-x-4 gap-y-0 pb-px">
           <button
             id="tab-admin-materials"
             onClick={() => setActiveTab('materials')}
@@ -294,6 +328,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>Studenten ({students.length})</span>
           </button>
 
+          <button
+            id="tab-admin-teachers"
+            onClick={() => setActiveTab('teachers')}
+            className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
+              activeTab === 'teachers'
+                ? 'border-[#24126E] text-[#24126E]'
+                : 'border-transparent text-slate-500 hover:text-[#24126E] hover:border-slate-200'
+            }`}
+          >
+            <Briefcase className="w-4 h-4 text-indigo-600" />
+            <span>Docenten ({teachers.length})</span>
+          </button>
+
+          <button
+            id="tab-admin-balance"
+            onClick={() => setActiveTab('balance_list')}
+            className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
+              activeTab === 'balance_list'
+                ? 'border-[#24126E] text-[#24126E]'
+                : 'border-transparent text-slate-500 hover:text-[#24126E] hover:border-slate-200'
+            }`}
+          >
+            <ClipboardList className="w-4 h-4 text-[#D70096]" />
+            <span>Balanslijst</span>
+          </button>
+
           {menuItems && onSaveMenuItems && (
             <button
               id="tab-admin-menu"
@@ -375,6 +435,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onAddStudent={onAddStudent}
             onDeleteStudent={onDeleteStudent}
             onToggleStudentActive={onToggleStudentActive}
+          />
+        )}
+
+        {activeTab === 'teachers' && (
+          <TeacherManagementTab
+            teachers={teachers}
+            tickets={tickets}
+            onAddTeacher={onAddTeacher}
+            onDeleteTeacher={onDeleteTeacher}
+            onToggleTeacherActive={onToggleTeacherActive}
+          />
+        )}
+
+        {activeTab === 'balance_list' && (
+          <AdminBalanceList
+            materials={materials}
+            categories={categories}
+            loans={loans}
           />
         )}
 

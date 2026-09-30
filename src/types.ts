@@ -31,6 +31,7 @@ export interface Loan {
   conditionAtReturn?: LoanReturnCondition;
   returnNotes?: string;
   linkedTicketNumber?: string;
+  returnDueDate?: string; // ISO date string (yyyy-mm-dd) — expected return date
 }
 
 export interface StudentWorker {
@@ -150,5 +151,6 @@ export type AdminTab =
   | 'barcodes'
   | 'students'
   | 'teachers'
+  | 'balance_list'
   | 'service_archive'
   | 'menu';

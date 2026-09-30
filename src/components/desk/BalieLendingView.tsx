@@ -42,7 +42,7 @@ import {
   Zap
 } from 'lucide-react';
 import { Material, Category, Loan, LoanReturnCondition } from '../../types';
-import { calculateAvailableQuantity, getDutchCurrentDateTime } from '../../lib/storage';
+import { calculateAvailableQuantity, getDutchCurrentDateTime, getEndOfTodayISODate, isLoanOverdue, formatDutchDate } from '../../lib/storage';
 import { ReturnConditionModal } from './ReturnConditionModal';
 import { BarcodePrintModal } from './BarcodePrintModal';
 import { BarcodeRenderer } from '../common/BarcodeRenderer';
@@ -51,7 +51,7 @@ interface BalieLendingViewProps {
   categories: Category[];
   materials: Material[];
   loans: Loan[];
-  onBorrow: (material: Material, quantity: number, borrowerName: string, borrowerTeam: string) => { success: boolean; loan?: Loan; error?: string };
+  onBorrow: (material: Material, quantity: number, borrowerName: string, borrowerTeam: string, returnDueDate?: string) => { success: boolean; loan?: Loan; error?: string };
   onReturnLoanWithCondition?: (
     loanId: string,
     condition: LoanReturnCondition,
@@ -95,6 +95,7 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
   const [borrowQuantity, setBorrowQuantity] = useState<number>(1);
   const [modalBorrowerName, setModalBorrowerName] = useState('');
   const [modalBorrowerTeam, setModalBorrowerTeam] = useState('');
+  const [modalReturnDate, setModalReturnDate] = useState<string>(getEndOfTodayISODate());
   const [formError, setFormError] = useState<string | null>(null);
 
   // Return condition modal state
@@ -276,6 +277,7 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
     setBorrowQuantity(1);
     setModalBorrowerName(borrowerName);
     setModalBorrowerTeam(borrowerTeam);
+    setModalReturnDate(getEndOfTodayISODate());
     setFormError(null);
   };
 
@@ -305,7 +307,7 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
       return;
     }
 
-    const result = onBorrow(selectedMaterial, borrowQuantity, name, team);
+    const result = onBorrow(selectedMaterial, borrowQuantity, name, team, modalReturnDate);
     if (result.success && result.loan) {
       setRecentSuccess({
         loan: result.loan,
@@ -795,13 +797,15 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {filteredActiveLoans.map((loan) => (
+                {filteredActiveLoans.map((loan) => {
+                  const overdue = isLoanOverdue(loan);
+                  return (
                   <div
                     key={loan.id}
-                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F7F5FA] transition-colors"
+                    className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${overdue ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-[#F7F5FA]'}`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-2xl bg-pink-50 text-[#D70096] flex items-center justify-center shrink-0 font-bold text-sm">
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-bold text-sm ${overdue ? 'bg-red-100 text-red-700' : 'bg-pink-50 text-[#D70096]'}`}>
                         {loan.quantity}x
                       </div>
                       <div>
@@ -812,6 +816,12 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
                           <span className="text-[10px] font-bold uppercase bg-indigo-50 text-[#24126E] px-2 py-0.5 rounded">
                             {loan.categoryName}
                           </span>
+                          {overdue && (
+                            <span className="text-[10px] font-bold uppercase bg-red-100 text-red-700 px-2 py-0.5 rounded flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              Te laat
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
                           <span className="flex items-center gap-1 font-semibold text-slate-700">
@@ -822,6 +832,12 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
                             <Clock className="w-3 h-3" />
                             {loan.borrowedAtDate} om {loan.borrowedAtTime}
                           </span>
+                          {loan.returnDueDate && (
+                            <span className={`flex items-center gap-1 font-semibold ${overdue ? 'text-red-700' : 'text-slate-500'}`}>
+                              <Calendar className="w-3 h-3" />
+                              Retour: {formatDutchDate(loan.returnDueDate)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -834,7 +850,8 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
                       <span>Retour innemen & Conditiecheck</span>
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -936,6 +953,26 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
                 </p>
               </div>
 
+              {/* Return Date */}
+              <div>
+                <label className="block text-xs font-bold text-[#24126E] uppercase tracking-wider mb-2">
+                  Retourdatum <span className="text-[#D70096]">*</span>
+                </label>
+                <div className="relative">
+                  <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={modalReturnDate}
+                    min={getEndOfTodayISODate()}
+                    onChange={(e) => setModalReturnDate(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2.5 bg-[#F7F5FA] rounded-xl border border-slate-200 text-xs text-[#24126E] font-semibold focus:outline-none focus:ring-2 focus:ring-[#D70096]"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Standaard is dit einde van de dag. Pas aan indien nodig.
+                </p>
+              </div>
+
               {formError && (
                 <div className="p-3 bg-red-50 text-red-700 rounded-xl text-xs flex items-center gap-2 border border-red-200">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1009,6 +1046,12 @@ export const BalieLendingView: React.FC<BalieLendingViewProps> = ({
               <div className="pt-2 border-t border-slate-200 text-slate-500">
                 Tijdstip: {recentSuccess.loan.borrowedAtDate} om {recentSuccess.loan.borrowedAtTime}
               </div>
+              {recentSuccess.loan.returnDueDate && (
+                <div className="text-slate-500 flex items-center gap-1.5 pt-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Verwachte retour: {formatDutchDate(recentSuccess.loan.returnDueDate)}</span>
+                </div>
+              )}
             </div>
 
             <button

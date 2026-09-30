@@ -41,6 +41,7 @@ function mapLoan(row: any): Loan {
     conditionAtReturn: row.condition_at_return as Loan['conditionAtReturn'] || undefined,
     returnNotes: row.return_notes || undefined,
     linkedTicketNumber: row.linked_ticket_number || undefined,
+    returnDueDate: row.return_due_date || undefined,
   };
 }
 
@@ -203,6 +204,7 @@ export async function saveLoans(loans: Loan[]): Promise<void> {
     condition_at_return: l.conditionAtReturn || null,
     return_notes: l.returnNotes || null,
     linked_ticket_number: l.linkedTicketNumber || null,
+    return_due_date: l.returnDueDate || null,
   }));
   const { error } = await supabase.from('loans').upsert(rows, { onConflict: 'id' });
   if (error) console.error('save loans:', error);
@@ -357,6 +359,19 @@ export function calculateAvailableQuantity(material: Material, loans: Loan[]): n
     .filter(l => l.materialId === material.id && l.status === 'uitgeleend')
     .reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
   return Math.max(0, material.totalQuantity - activeBorrowedCount);
+}
+
+export function isLoanOverdue(loan: Loan): boolean {
+  if (loan.status !== 'uitgeleend' || !loan.returnDueDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(loan.returnDueDate);
+  due.setHours(0, 0, 0, 0);
+  return today > due;
+}
+
+export function getEndOfTodayISODate(): string {
+  return new Date().toISOString().split('T')[0];
 }
 
 export function getDutchCurrentDateTime() {
