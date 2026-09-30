@@ -66,6 +66,7 @@ export interface MenuItem {
   maxDailyPortions: number; // Keukencapaciteit (max bestellingen)
   active: boolean;
   dietaryTag?: string; // e.g. "Specialiteit vd week", "Vegetarisch 🌱", "Huisgemaakt"
+  availablePickupDays?: number[]; // 0=zo, 1=ma, ... 6=za. Empty/undefined = alle dagen
 }
 
 export interface MealOrderItem {
@@ -90,8 +91,8 @@ export type TicketPriority = 'laag' | 'normaal' | 'hoog' | 'spoed';
 export type TicketStatus = 
   | 'open' 
   | 'in_behandeling' 
-  | 'wacht_op_onderdelen' 
   | 'wachtlijst' 
+  | 'afgewezen'
   | 'afgerond' 
   | 'geannuleerd';
 
@@ -123,6 +124,15 @@ export interface ServiceTicket {
   mealPickupTime?: string; // e.g. "12:30"
   mealDietaryNotes?: string;
   totalPortions?: number;
+  transferHistory?: TicketTransferRecord[];
+}
+
+export interface TicketTransferRecord {
+  date: string; // ISO timestamp of transfer
+  fromTeacher?: string;
+  fromStudent?: string;
+  toTeacher?: string;
+  toStudent?: string;
 }
 
 export type MainSystemModule = 'portal' | 'uitleen' | 'service' | 'horeca';

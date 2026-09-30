@@ -111,7 +111,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   const totalTicketsCount = tickets.length;
   const completedTicketsCount = tickets.filter(t => t.status === 'afgerond').length;
-  const inProgressTicketsCount = tickets.filter(t => t.status === 'in_behandeling' || t.status === 'wacht_op_onderdelen').length;
+  const inProgressTicketsCount = tickets.filter(t => t.status === 'in_behandeling' || t.status === 'afgewezen').length;
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
 
   // Export to CSV for Excel

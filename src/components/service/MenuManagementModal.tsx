@@ -101,6 +101,7 @@ export const MenuManagementModal: React.FC<MenuManagementModalProps> = ({
   const [maxDailyPortions, setMaxDailyPortions] = useState<number>(20);
   const [dietaryTag, setDietaryTag] = useState('Specialiteit vd Week');
   const [active, setActive] = useState(true);
+  const [pickupDays, setPickupDays] = useState<number[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,6 +123,7 @@ export const MenuManagementModal: React.FC<MenuManagementModalProps> = ({
     setMaxDailyPortions(20);
     setDietaryTag('Specialiteit vd Week');
     setActive(true);
+    setPickupDays([]);
     setShowPresetPicker(false);
   };
 
@@ -136,6 +138,7 @@ export const MenuManagementModal: React.FC<MenuManagementModalProps> = ({
     setMaxDailyPortions(dish.maxDailyPortions || 20);
     setDietaryTag(dish.dietaryTag || '');
     setActive(dish.active);
+    setPickupDays(dish.availablePickupDays || []);
     setShowPresetPicker(false);
   };
 
@@ -177,6 +180,7 @@ export const MenuManagementModal: React.FC<MenuManagementModalProps> = ({
         maxDailyPortions: Number(maxDailyPortions) > 0 ? Number(maxDailyPortions) : 10,
         dietaryTag: dietaryTag.trim(),
         active,
+        availablePickupDays: pickupDays,
       };
       const updated = [...menuItems, newDish];
       onSaveMenuItems(updated);
@@ -194,6 +198,7 @@ export const MenuManagementModal: React.FC<MenuManagementModalProps> = ({
             maxDailyPortions: Number(maxDailyPortions) > 0 ? Number(maxDailyPortions) : item.maxDailyPortions,
             dietaryTag: dietaryTag.trim(),
             active,
+            availablePickupDays: pickupDays.length > 0 ? pickupDays : item.availablePickupDays,
           };
         }
         return item;
@@ -499,6 +504,33 @@ export const MenuManagementModal: React.FC<MenuManagementModalProps> = ({
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* Afhaaldagen */}
+                <div>
+                  <label className="block text-xs font-bold text-[#24126E] uppercase tracking-wider mb-2">
+                    Afhaaldagen
+                  </label>
+                  <p className="text-[11px] text-slate-500 mb-2">Selecteer op welke dagen dit gerecht af te halen is. Geen selectie = alle dagen.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { day: 1, label: 'Ma' }, { day: 2, label: 'Di' }, { day: 3, label: 'Wo' },
+                      { day: 4, label: 'Do' }, { day: 5, label: 'Vr' }, { day: 6, label: 'Za' }, { day: 0, label: 'Zo' }
+                    ].map(({ day, label }) => (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => setPickupDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort())}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          pickupDays.includes(day)
+                            ? 'bg-[#24126E] text-white shadow-xs'
+                            : 'bg-[#F7F5FA] text-slate-600 hover:bg-slate-200 border border-slate-200'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Active Switch & Actions */}

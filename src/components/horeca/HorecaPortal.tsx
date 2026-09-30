@@ -46,8 +46,13 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
   onBackToPortal,
   adminSession,
 }) => {
+  // Check if this is a menu-only share link (no admin/kitchen tabs)
+  const isMenuOnlyLink = typeof window !== 'undefined' && 
+    (window.location.search.includes('menu=1') || window.location.hash.includes('menu=1'));
+
   // Main Tab: 'order' (customer ordering), 'kitchen' (DV team kitchen & pickup desk), or 'admin' (weekmenu & portion management)
-  const [activeTab, setActiveTab] = useState<'order' | 'kitchen' | 'admin'>('order');
+  const [activeTab, setActiveTab] = useState<'order' | 'kitchen' | 'admin'>(isMenuOnlyLink ? 'order' : 'order');
+  const menuOnlyMode = isMenuOnlyLink;
   
   // Admin authentication state
   const [showPinModal, setShowPinModal] = useState(false);
@@ -188,9 +193,16 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
   const inPrepKitchenCount = todayOrders.filter(t => t.status === 'in_behandeling').length;
   const completedKitchenCount = todayOrders.filter(t => t.status === 'afgerond').length;
 
-  // Active dishes on the menu
+  // Active dishes on the menu, filtered by today's pickup day
   const activeDishes = useMemo(() => {
-    return menuItems.filter(m => m.active);
+    const todayDow = new Date().getDay();
+    return menuItems.filter(m => {
+      if (!m.active) return false;
+      if (m.availablePickupDays && m.availablePickupDays.length > 0) {
+        return m.availablePickupDays.includes(todayDow);
+      }
+      return true; // no pickup days set = available all days
+    });
   }, [menuItems]);
 
   const filteredDishes = useMemo(() => {
@@ -282,7 +294,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
   };
 
   const handleCopyShareLink = () => {
-    const url = `${window.location.origin}${window.location.pathname}?module=horeca`;
+    const url = `${window.location.origin}${window.location.pathname}?module=horeca&menu=1`;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
@@ -320,7 +332,8 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
 
         {/* Top Actions & Perspective Switcher */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
-          {/* Main Perspective Switch */}
+          {/* Main Perspective Switch — hidden in menu-only mode */}
+          {!menuOnlyMode && (
           <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold shadow-xs">
             <button
               onClick={() => setActiveTab('order')}
@@ -362,9 +375,11 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
               <span>Weekmenu Beheer (Admin)</span>
             </button>
           </div>
+          )}
 
-          {/* Snel beheer of Admin indicator */}
-          {isAdminAuthenticated ? (
+          {/* Snel beheer of Admin indicator — hidden in menu-only mode */}
+          {!menuOnlyMode && (
+            isAdminAuthenticated ? (
             <div className="flex items-center gap-1.5 bg-amber-50 p-1 rounded-2xl border border-amber-200">
               <button
                 onClick={() => setIsMenuModalOpen(true)}
@@ -390,7 +405,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
                 <Lock className="w-3.5 h-3.5" />
               </button>
             </div>
-          ) : (
+            ) : (
             <button
               onClick={() => handleRequestAdmin('open_modal')}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-100 hover:bg-amber-200/90 text-amber-950 border border-amber-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
@@ -400,9 +415,11 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
               <span className="hidden sm:inline">Weekmenu & Porties (Admin)</span>
               <span className="sm:hidden">Menu (Admin)</span>
             </button>
+            )
           )}
 
-          {/* Deel link knop */}
+          {/* Deel link knop — hidden in menu-only mode */}
+          {!menuOnlyMode && (
           <button
             onClick={() => setIsShareModalOpen(true)}
             className="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-[#24126E] border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
@@ -411,6 +428,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
             <Share2 className="w-3.5 h-3.5 text-[#D70096]" />
             <span className="hidden sm:inline">Deel Link</span>
           </button>
+          )}
         </div>
       </div>
 
@@ -1220,7 +1238,7 @@ export const HorecaPortal: React.FC<HorecaPortalProps> = ({
 
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
               <span className="text-xs font-mono text-slate-700 truncate">
-                {window.location.origin}{window.location.pathname}?module=horeca
+                {window.location.origin}{window.location.pathname}?module=horeca&menu=1
               </span>
               <button
                 onClick={handleCopyShareLink}

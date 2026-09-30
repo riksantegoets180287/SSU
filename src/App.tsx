@@ -59,6 +59,7 @@ import { PublicServiceRequestForm } from './components/service/PublicServiceRequ
 import { HorecaPortal } from './components/horeca/HorecaPortal';
 import { CircleCheck as CheckCircle2, CircleAlert as AlertCircle, Info, X } from 'lucide-react';
 import { useAdminSession } from './lib/useAdminSession';
+import { RequesterStatusPage } from './components/service/RequesterStatusPage';
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<MainSystemModule>(() => {
@@ -83,6 +84,16 @@ export default function App() {
       return search.includes('form=klusje') || search.includes('mode=aanvragen') || search.includes('view=service_form') || hash.includes('klusje') || hash.includes('aanvragen');
     }
     return false;
+  });
+
+  // Requester status link — shows only TK numbers and statuses for a specific requester
+  const [requesterStatusName, setRequesterStatusName] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const name = params.get('requester');
+      if (name) return decodeURIComponent(name);
+    }
+    return null;
   });
   
   // Data states
@@ -573,7 +584,7 @@ export default function App() {
   const serviceTicketsList = tickets.filter(isServiceKlusTicket);
   const serviceKlussenStats = {
     total: serviceTicketsList.length,
-    unhandled: serviceTicketsList.filter(t => t.status === 'open' || t.status === 'in_behandeling' || t.status === 'wacht_op_onderdelen' || t.status === 'wachtlijst').length,
+    unhandled: serviceTicketsList.filter(t => t.status === 'open' || t.status === 'in_behandeling' || t.status === 'afgewezen' || t.status === 'wachtlijst').length,
     newCount: serviceTicketsList.filter(t => t.status === 'open').length,
   };
 
@@ -581,7 +592,7 @@ export default function App() {
   const meetingTicketsList = tickets.filter(isMeetingTicket);
   const vergaderStats = {
     total: meetingTicketsList.length,
-    unhandled: meetingTicketsList.filter(t => t.status === 'open' || t.status === 'in_behandeling' || t.status === 'wacht_op_onderdelen' || t.status === 'wachtlijst').length,
+    unhandled: meetingTicketsList.filter(t => t.status === 'open' || t.status === 'in_behandeling' || t.status === 'afgewezen' || t.status === 'wachtlijst').length,
     newCount: meetingTicketsList.filter(t => t.status === 'open').length,
   };
 
@@ -650,8 +661,16 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col">
+        {/* VIEW 0: Requester Status Link — shows only TK numbers and statuses */}
+        {requesterStatusName && (
+          <RequesterStatusPage
+            tickets={tickets}
+            requesterName={requesterStatusName}
+          />
+        )}
+
         {/* VIEW 1: Main Portal Selection (Choice between Uitleensysteem, Servicesysteem & Horeca) */}
-        {activeModule === 'portal' && (
+        {activeModule === 'portal' && !requesterStatusName && (
           <MainPortal
             onSelectModule={handleSwitchModule}
             loansStats={loansStats}
@@ -667,7 +686,7 @@ export default function App() {
         )}
 
         {/* VIEW 2: Servicesysteem (Ticketsysteem - Afhandelaars Systeem) */}
-        {activeModule === 'service' && (
+        {activeModule === 'service' && !requesterStatusName && (
           <ServicePortal
             tickets={tickets}
             students={students}
@@ -692,7 +711,7 @@ export default function App() {
         )}
 
         {/* VIEW 3: Horeca & Catering (Weekmenu, Maaltijden Bestellen & Keukendashboard) */}
-        {activeModule === 'horeca' && (
+        {activeModule === 'horeca' && !requesterStatusName && (
           <HorecaPortal
             tickets={tickets}
             students={students}
@@ -710,7 +729,7 @@ export default function App() {
         )}
 
         {/* VIEW 3: Uitleensysteem (Balie Personeel & Admin) */}
-        {activeModule === 'uitleen' && (
+        {activeModule === 'uitleen' && !requesterStatusName && (
           <>
             {currentView === 'role_select' && (
               <RoleSelect

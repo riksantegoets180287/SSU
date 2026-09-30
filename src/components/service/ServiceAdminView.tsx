@@ -154,8 +154,8 @@ export const ServiceAdminView: React.FC<ServiceAdminViewProps> = ({
         return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-pink-50 text-[#D70096] border border-pink-200">Open</span>;
       case 'in_behandeling':
         return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-indigo-100 text-[#24126E]">In behandeling</span>;
-      case 'wacht_op_onderdelen':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-900">Onderdelen</span>;
+      case 'afgewezen':
+        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-700 border border-red-200">Afgewezen</span>;
       case 'wachtlijst':
         return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-900">Wachtlijst</span>;
       case 'afgerond':
@@ -367,7 +367,7 @@ export const ServiceAdminView: React.FC<ServiceAdminViewProps> = ({
                 <option value="all">Alle statussen</option>
                 <option value="open">Nieuw / Open</option>
                 <option value="in_behandeling">In behandeling</option>
-                <option value="wacht_op_onderdelen">Wacht op onderdelen</option>
+                <option value="afgewezen">Afgewezen</option>
                 <option value="wachtlijst">Wachtlijst</option>
                 <option value="afgerond">Afgerond</option>
                 <option value="geannuleerd">Geannuleerd</option>

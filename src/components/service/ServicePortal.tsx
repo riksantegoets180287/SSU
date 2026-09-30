@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Wrench, Plus, Search, ListFilter as Filter, CircleCheck as CheckCircle2, Clock, CircleAlert as AlertCircle, TriangleAlert as AlertTriangle, MapPin, User, Calendar, Layers, Tv, Building2, Armchair, Sparkles, Send, X, ArrowLeft, MessageSquare, ChevronRight, LayoutGrid, List as ListIcon, Circle as HelpCircle, Tag, Phone, Mail, ShieldCheck, Check, Camera, Image as ImageIcon, Users, GraduationCap, Briefcase, Eye, Download, Link2, Lock, Archive, Clock as Unlock, KeyRound, FileDown, Utensils, ChefHat } from 'lucide-react';
-import { ServiceTicket, TicketCategory, TicketPriority, TicketStatus, StudentWorker, SupervisingTeacher, MenuItem } from '../../types';
+import { Wrench, Plus, Search, ListFilter as Filter, CircleCheck as CheckCircle2, Clock, CircleAlert as AlertCircle, TriangleAlert as AlertTriangle, MapPin, User, Calendar, Layers, Tv, Building2, Armchair, Sparkles, Send, X, ArrowLeft, ArrowLeftRight, MessageSquare, ChevronRight, LayoutGrid, List as ListIcon, Circle as HelpCircle, Tag, Phone, Mail, ShieldCheck, Check, Camera, Image as ImageIcon, Users, GraduationCap, Briefcase, Eye, Download, Link2, Lock, Archive, Clock as Unlock, KeyRound, FileDown, Utensils, ChefHat, History } from 'lucide-react';
+import { ServiceTicket, TicketCategory, TicketPriority, TicketStatus, StudentWorker, SupervisingTeacher, MenuItem, TicketTransferRecord } from '../../types';
 import { generateTicketReceiptPdf } from '../../utils/ticketReceiptPdf';
 import { formatDutchDate, formatDutchDateTime, getStoredMenuItems, saveMenuItems } from '../../lib/storage';
 import { compressImageFile } from '../../lib/barcode';
@@ -97,6 +97,9 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   const [assignedTeacher, setAssignedTeacher] = useState<string>('');
   const [assignedStudent, setAssignedStudent] = useState<string>('');
   const [selectedPhotoPreview, setSelectedPhotoPreview] = useState<string | null>(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferTeacher, setTransferTeacher] = useState('');
+  const [transferStudent, setTransferStudent] = useState('');
 
   // Form State for new ticket
   const [formTitle, setFormTitle] = useState('');
@@ -248,11 +251,11 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
             In behandeling
           </span>
         );
-      case 'wacht_op_onderdelen':
+      case 'afgewezen':
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-            <AlertCircle className="w-3 h-3" />
-            Wacht op onderdelen
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">
+            <X className="w-3 h-3" />
+            Afgewezen
           </span>
         );
       case 'wachtlijst':
@@ -285,7 +288,7 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   // KPIs for active desk tickets
   const openCount = activeTickets.filter(t => t.status === 'open').length;
   const inProgressCount = activeTickets.filter(t => t.status === 'in_behandeling').length;
-  const waitingCount = activeTickets.filter(t => t.status === 'wacht_op_onderdelen').length;
+  const rejectedCount = activeTickets.filter(t => t.status === 'afgewezen').length;
   const waitlistCount = activeTickets.filter(t => t.status === 'wachtlijst').length;
   const completedCount = activeTickets.filter(t => t.status === 'afgerond').length;
 
@@ -356,6 +359,42 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
       assignedStudent: assignedStudent,
       completedAt: newStatus === 'afgerond' ? new Date().toISOString() : selectedTicket.completedAt,
     });
+  };
+
+  const handleOpenTransferModal = () => {
+    if (!selectedTicket) return;
+    setTransferTeacher(selectedTicket.assignedTeacher || selectedTicket.assignedTo || '');
+    setTransferStudent(selectedTicket.assignedStudent || '');
+    setShowTransferModal(true);
+  };
+
+  const handleConfirmTransfer = () => {
+    if (!selectedTicket) return;
+    const transferRecord: TicketTransferRecord = {
+      date: new Date().toISOString(),
+      fromTeacher: selectedTicket.assignedTeacher || selectedTicket.assignedTo || undefined,
+      fromStudent: selectedTicket.assignedStudent || undefined,
+      toTeacher: transferTeacher || undefined,
+      toStudent: transferStudent || undefined,
+    };
+    const existingHistory = selectedTicket.transferHistory || [];
+    const updatedTicket = {
+      ...selectedTicket,
+      assignedTeacher: transferTeacher || undefined,
+      assignedTo: transferTeacher || undefined,
+      assignedStudent: transferStudent || undefined,
+      transferHistory: [...existingHistory, transferRecord],
+    };
+    onUpdateTicketStatus(
+      updatedTicket.id,
+      updatedTicket.status,
+      updatedTicket.resolutionNotes,
+      transferTeacher,
+      transferStudent,
+      transferTeacher
+    );
+    setSelectedTicket(updatedTicket);
+    setShowTransferModal(false);
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -1046,18 +1085,18 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
                 </button>
 
                 <button
-                  onClick={() => setStatusFilter('wacht_op_onderdelen')}
+                  onClick={() => setStatusFilter('afgewezen')}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
-                    statusFilter === 'wacht_op_onderdelen'
-                      ? 'bg-amber-100 text-amber-900 font-bold shadow-xs'
+                    statusFilter === 'afgewezen'
+                      ? 'bg-red-100 text-red-900 font-bold shadow-xs'
                       : 'hover:bg-slate-50 text-slate-600 font-medium'
                   }`}
                 >
                   <span className="flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
-                    Wacht op onderdelen
+                    <X className="w-3.5 h-3.5 text-red-700" />
+                    Afgewezen
                   </span>
-                  <span className="bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded text-[10px]">{waitingCount}</span>
+                  <span className="bg-red-200 text-red-900 font-bold px-2 py-0.5 rounded text-[10px]">{rejectedCount}</span>
                 </button>
 
                 <button
@@ -1526,15 +1565,15 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => handleSaveStatusChange('wacht_op_onderdelen')}
+                    onClick={() => handleSaveStatusChange('afgewezen')}
                     className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                      selectedTicket.status === 'wacht_op_onderdelen'
-                        ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-amber-50 text-amber-900 hover:bg-amber-100'
+                      selectedTicket.status === 'afgewezen'
+                        ? 'bg-red-600 text-white shadow-xs'
+                        : 'bg-red-50 text-red-700 hover:bg-red-100'
                     }`}
                   >
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Wacht op onderdelen</span>
+                    <X className="w-3.5 h-3.5" />
+                    <span>Afgewezen</span>
                   </button>
 
                   <button
@@ -1645,17 +1684,135 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
               >
                 Sluiten
               </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenTransferModal}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-[#24126E] text-xs font-bold transition-colors cursor-pointer border border-indigo-200 flex items-center gap-1.5"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  <span>Overdragen</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedTicket) {
+                      onUpdateTicketStatus(selectedTicket.id, selectedTicket.status, statusUpdateNotes, assignedTeacher, assignedStudent, assignedTeacher);
+                      setSelectedTicket(null);
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-[#24126E] hover:bg-[#1A0D52] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                >
+                  Gegevens opslaan
+                </button>
+              </div>
+            </div>
+
+            {/* Transfer History */}
+            {selectedTicket.transferHistory && selectedTicket.transferHistory.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <label className="block text-xs font-bold text-[#24126E] uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5 text-[#24126E]" />
+                  <span>Overdracht geschiedenis</span>
+                </label>
+                <div className="space-y-2">
+                  {selectedTicket.transferHistory.map((record, idx) => {
+                    const fromParts = [
+                      record.fromTeacher ? `Docent: ${record.fromTeacher}` : null,
+                      record.fromStudent ? `Student: ${record.fromStudent}` : null,
+                    ].filter(Boolean).join(' • ') || 'Niemand';
+                    const toParts = [
+                      record.toTeacher ? `Docent: ${record.toTeacher}` : null,
+                      record.toStudent ? `Student: ${record.toStudent}` : null,
+                    ].filter(Boolean).join(' • ') || 'Niemand';
+                    return (
+                      <div key={idx} className="flex items-center gap-3 text-[11px] bg-[#F7F5FA] rounded-xl px-3 py-2 border border-slate-100">
+                        <span className="text-slate-400 font-mono shrink-0">{formatDutchDateTime(record.date)}</span>
+                        <span className="text-slate-600">
+                          <strong className="text-slate-500">{fromParts}</strong>
+                          <ArrowLeftRight className="w-3 h-3 inline mx-1.5 text-[#D70096]" />
+                          <strong className="text-[#24126E]">{toParts}</strong>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TRANSFER MODAL */}
+      {showTransferModal && selectedTicket && (
+        <div className="fixed inset-0 z-50 bg-[#1F1735]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-indigo-50 text-[#24126E] rounded-xl flex items-center justify-center">
+                <ArrowLeftRight className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#24126E]">Klus overdragen</h3>
+                <p className="text-[11px] text-slate-500">Ticket {selectedTicket.ticketNumber} — {selectedTicket.title}</p>
+              </div>
+            </div>
+
+            <div className="bg-[#F7F5FA] rounded-xl p-3 mb-4 text-[11px] text-slate-600 border border-slate-100">
+              <p className="font-semibold text-[#24126E] mb-1">Huidige toewijzing:</p>
+              <p>Docent: {selectedTicket.assignedTeacher || selectedTicket.assignedTo || '—'}</p>
+              <p>Student: {selectedTicket.assignedStudent || '—'}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#24126E] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  <Briefcase className="w-3.5 h-3.5 text-[#24126E]" />
+                  <span>Nieuwe begeleidend docent:</span>
+                </label>
+                <select
+                  value={transferTeacher}
+                  onChange={(e) => setTransferTeacher(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-[#F7F5FA] rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D70096] cursor-pointer"
+                >
+                  <option value="">-- Geen docent --</option>
+                  {teachers.filter(t => t.active).map(t => (
+                    <option key={t.id} value={t.name}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#24126E] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  <GraduationCap className="w-3.5 h-3.5 text-[#D70096]" />
+                  <span>Nieuwe student:</span>
+                </label>
+                <select
+                  value={transferStudent}
+                  onChange={(e) => setTransferStudent(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-[#F7F5FA] rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D70096] cursor-pointer"
+                >
+                  <option value="">-- Geen student --</option>
+                  {students.filter(s => s.active).map(s => (
+                    <option key={s.id} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
               <button
                 type="button"
-                onClick={() => {
-                  if (selectedTicket) {
-                    onUpdateTicketStatus(selectedTicket.id, selectedTicket.status, statusUpdateNotes, assignedTeacher, assignedStudent, assignedTeacher);
-                    setSelectedTicket(null);
-                  }
-                }}
-                className="px-5 py-2.5 rounded-xl bg-[#24126E] hover:bg-[#1A0D52] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                onClick={() => setShowTransferModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#F7F5FA] hover:bg-slate-200 text-slate-600 text-xs font-bold transition-colors cursor-pointer"
               >
-                Gegevens opslaan
+                Annuleren
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmTransfer}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#24126E] hover:bg-[#1A0D52] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+              >
+                Overdracht bevestigen
               </button>
             </div>
           </div>

@@ -51,8 +51,8 @@ export const TeacherManagementTab: React.FC<TeacherManagementTabProps> = ({
         return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-pink-100 text-[#D70096]">Open</span>;
       case 'in_behandeling':
         return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-[#24126E]">Behandeling</span>;
-      case 'wacht_op_onderdelen':
-        return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900">Onderdelen</span>;
+      case 'afgewezen':
+        return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-100 text-red-700">Afgewezen</span>;
       case 'afgerond':
         return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">Afgerond</span>;
       case 'geannuleerd':

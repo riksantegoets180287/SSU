@@ -73,7 +73,7 @@ export function generateTicketReceiptPdf(ticket: ServiceTicket): void {
   const statusLabel = 
     ticket.status === 'open' ? 'Ingediend (Wachtrij)' :
     ticket.status === 'in_behandeling' ? 'In behandeling' :
-    ticket.status === 'wacht_op_onderdelen' ? 'Wacht op onderdelen' :
+    ticket.status === 'afgewezen' ? 'Afgewezen' :
     ticket.status === 'afgerond' ? 'Afgerond' : 'Geannuleerd';
   doc.text(statusLabel, margin + 22, currentY + 9);
 

@@ -77,6 +77,7 @@ function mapMenuItem(row: any): MenuItem {
     maxDailyPortions: row.max_daily_portions ?? 0,
     active: row.active ?? true,
     dietaryTag: row.dietary_tag || undefined,
+    availablePickupDays: row.available_pickup_days || undefined,
   };
 }
 
@@ -110,6 +111,7 @@ function mapTicket(row: any): ServiceTicket {
     mealPickupTime: row.meal_pickup_time || undefined,
     mealDietaryNotes: row.meal_dietary_notes || undefined,
     totalPortions: row.total_portions || undefined,
+    transferHistory: row.transfer_history || undefined,
   };
 }
 
@@ -236,6 +238,7 @@ export async function saveTickets(tickets: ServiceTicket[]): Promise<void> {
       meal_pickup_time: t.mealPickupTime || null,
       meal_dietary_notes: t.mealDietaryNotes || null,
       total_portions: t.totalPortions || null,
+      transfer_history: t.transferHistory || [],
       created_at: t.createdAt,
     };
     const { error: upsertErr } = await supabase.from('service_tickets').upsert(ticketRow, { onConflict: 'id' });
@@ -294,6 +297,7 @@ export async function saveMenuItems(items: MenuItem[]): Promise<void> {
     max_daily_portions: m.maxDailyPortions,
     active: m.active,
     dietary_tag: m.dietaryTag || null,
+    available_pickup_days: m.availablePickupDays || [],
   }));
   const { error } = await supabase.from('menu_items').upsert(rows, { onConflict: 'id' });
   if (error) console.error('save menu items:', error);
