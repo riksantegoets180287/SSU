@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Wrench, Plus, Search, ListFilter as Filter, CircleCheck as CheckCircle2, Clock, CircleAlert as AlertCircle, TriangleAlert as AlertTriangle, MapPin, User, Calendar, Layers, Tv, Building2, Armchair, Sparkles, Send, X, ArrowLeft, ArrowLeftRight, MessageSquare, ChevronRight, LayoutGrid, List as ListIcon, Circle as HelpCircle, Tag, Phone, Mail, ShieldCheck, Check, Camera, Image as ImageIcon, Users, GraduationCap, Briefcase, Eye, Download, Link2, Lock, Archive, Clock as Unlock, KeyRound, FileDown, Utensils, ChefHat, History } from 'lucide-react';
+import { Wrench, Plus, Search, ListFilter as Filter, CircleCheck as CheckCircle2, Clock, CircleAlert as AlertCircle, TriangleAlert as AlertTriangle, MapPin, User, Calendar, Layers, Tv, Building2, Armchair, Sparkles, Send, X, ArrowLeft, ArrowLeftRight, MessageSquare, ChevronRight, LayoutGrid, List as ListIcon, Circle as HelpCircle, Tag, Phone, Mail, ShieldCheck, Check, Camera, Image as ImageIcon, Users, GraduationCap, Briefcase, Eye, Download, Link2, Lock, Archive, Clock as Unlock, KeyRound, FileDown, Utensils, ChefHat, History, Copy, ExternalLink } from 'lucide-react';
 import { ServiceTicket, TicketCategory, TicketPriority, TicketStatus, StudentWorker, SupervisingTeacher, MenuItem, TicketTransferRecord } from '../../types';
 import { generateTicketReceiptPdf } from '../../utils/ticketReceiptPdf';
 import { formatDutchDate, formatDutchDateTime, getStoredMenuItems, saveMenuItems } from '../../lib/storage';
@@ -64,7 +64,8 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   // Desk State
   const [activeTab, setActiveTab] = useState<'overview' | 'new_ticket'>('overview');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [copiedRequesterLink, setCopiedRequesterLink] = useState(false);  const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
+  const [isStatusLinkModalOpen, setIsStatusLinkModalOpen] = useState(false);
+  const [copiedStatusLink, setCopiedStatusLink] = useState(false);  const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'horeca' | 'klusjes'>('all');
   const [currentMenuItems, setCurrentMenuItems] = useState<MenuItem[]>(() => propMenuItems && propMenuItems.length > 0 ? propMenuItems : []);
 
@@ -527,6 +528,17 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
             <Link2 className="w-3.5 h-3.5 text-[#D70096]" />
             <span className="hidden sm:inline">Aanvraaglink voor collega&apos;s</span>
             <span className="sm:hidden">Aanvraaglink</span>
+          </button>
+
+          {/* Status Overview Link Button */}
+          <button
+            onClick={() => setIsStatusLinkModalOpen(true)}
+            className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+            title="Deel een link naar het openbare statusoverzicht van alle klusjes"
+          >
+            <Eye className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="hidden sm:inline">Statusoverzicht delen</span>
+            <span className="sm:hidden">Statuslink</span>
           </button>
 
           {/* Desk Tabs */}
@@ -1531,21 +1543,6 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Aanvrager & Team</span>
                   <span className="font-bold text-[#24126E]">{selectedTicket.requesterName}</span>
                   <span className="text-slate-500 block text-[11px]">{selectedTicket.requesterTeam}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const url = `${window.location.origin}${window.location.pathname}?requester=${encodeURIComponent(selectedTicket.requesterName)}`;
-                      navigator.clipboard.writeText(url).then(() => {
-                        setCopiedRequesterLink(true);
-                        setTimeout(() => setCopiedRequesterLink(false), 2500);
-                      });
-                    }}
-                    className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-[#D70096] hover:text-[#b5007e] cursor-pointer"
-                    title="Kopieer een link met alleen de TK nummers en statussen van deze aanvrager"
-                  >
-                    {copiedRequesterLink ? <Check className="w-3 h-3" /> : <Link2 className="w-3 h-3" />}
-                    <span>{copiedRequesterLink ? 'Gekopieerd!' : 'Kopieer statuslink voor aanvrager'}</span>
-                  </button>
                 </div>
 
                 <div className="p-3 bg-[#F7F5FA] rounded-xl border border-slate-100">
@@ -1997,6 +1994,118 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
           }
         }}
       />
+
+      {/* Status Overview Link Modal */}
+      {isStatusLinkModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#1F1735]/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 block">
+                    Voor Aanvragers
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-[#24126E]">
+                    Statusoverzicht Link
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsStatusLinkModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-[#F7F5FA] hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-500 mb-5 leading-relaxed">
+              Deel deze link met aanvragers. Zij zien <strong className="text-[#24126E]">alleen de TK nummers en statussen</strong> van alle klusjes — verder niets. Iedereen kan zijn eigen TK nummer opzoeken en zien hoe druk het is.
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-[11px] font-bold text-[#24126E] uppercase tracking-wider mb-2">
+                  Openbare statuslink
+                </label>
+                <div className="flex items-center gap-2 bg-[#F7F5FA] p-2 rounded-2xl border border-slate-200">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}?statusoverzicht` : ''}`}
+                    className="w-full bg-transparent px-2 text-xs font-mono text-[#24126E] focus:outline-none select-all truncate"
+                  />
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}${window.location.pathname}?statusoverzicht`;
+                      navigator.clipboard.writeText(url).then(() => {
+                        setCopiedStatusLink(true);
+                        setTimeout(() => setCopiedStatusLink(false), 2500);
+                      });
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                      copiedStatusLink
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                    }`}
+                  >
+                    {copiedStatusLink ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Gekopieerd!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Kopieer link</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}${window.location.pathname}?statusoverzicht`;
+                  window.open(url, '_blank');
+                }}
+                className="w-full p-3 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-2xl text-left flex items-center gap-3 transition-colors cursor-pointer group"
+              >
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#24126E] group-hover:bg-[#24126E] group-hover:text-white flex items-center justify-center transition-colors shrink-0">
+                  <ExternalLink className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-[#24126E] block">
+                    Open statusoverzicht
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Bekijk wat aanvragers zien
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            <div className="bg-emerald-50/70 border border-emerald-200/60 rounded-2xl p-4 flex items-start gap-3 text-xs text-emerald-900">
+              <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <strong className="block text-emerald-950 font-bold mb-0.5">Veilig & Gescheiden</strong>
+                Aanvragers zien alleen TK nummers en statussen. Het ticketoverzicht en beheer blijven uitsluitend zichtbaar voor het serviceteam.
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setIsStatusLinkModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl bg-[#24126E] hover:bg-[#1A0D52] text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                Sluiten
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Weekmenu & Portiebeheer Modal */}
       <MenuManagementModal

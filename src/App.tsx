@@ -86,14 +86,13 @@ export default function App() {
     return false;
   });
 
-  // Requester status link — shows only TK numbers and statuses for a specific requester
-  const [requesterStatusName, setRequesterStatusName] = useState<string | null>(() => {
+  // Public status overview link — shows all tickets (TK number + status only)
+  const [showStatusOverview, setShowStatusOverview] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const name = params.get('requester');
-      if (name) return decodeURIComponent(name);
+      return params.has('statusoverzicht');
     }
-    return null;
+    return false;
   });
   
   // Data states
@@ -662,15 +661,14 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col">
         {/* VIEW 0: Requester Status Link — shows only TK numbers and statuses */}
-        {requesterStatusName && (
+        {showStatusOverview && (
           <RequesterStatusPage
             tickets={tickets}
-            requesterName={requesterStatusName}
           />
         )}
 
         {/* VIEW 1: Main Portal Selection (Choice between Uitleensysteem, Servicesysteem & Horeca) */}
-        {activeModule === 'portal' && !requesterStatusName && (
+        {activeModule === 'portal' && !showStatusOverview && (
           <MainPortal
             onSelectModule={handleSwitchModule}
             loansStats={loansStats}
@@ -686,7 +684,7 @@ export default function App() {
         )}
 
         {/* VIEW 2: Servicesysteem (Ticketsysteem - Afhandelaars Systeem) */}
-        {activeModule === 'service' && !requesterStatusName && (
+        {activeModule === 'service' && !showStatusOverview && (
           <ServicePortal
             tickets={tickets}
             students={students}
@@ -711,7 +709,7 @@ export default function App() {
         )}
 
         {/* VIEW 3: Horeca & Catering (Weekmenu, Maaltijden Bestellen & Keukendashboard) */}
-        {activeModule === 'horeca' && !requesterStatusName && (
+        {activeModule === 'horeca' && !showStatusOverview && (
           <HorecaPortal
             tickets={tickets}
             students={students}
@@ -729,7 +727,7 @@ export default function App() {
         )}
 
         {/* VIEW 3: Uitleensysteem (Balie Personeel & Admin) */}
-        {activeModule === 'uitleen' && !requesterStatusName && (
+        {activeModule === 'uitleen' && !showStatusOverview && (
           <>
             {currentView === 'role_select' && (
               <RoleSelect

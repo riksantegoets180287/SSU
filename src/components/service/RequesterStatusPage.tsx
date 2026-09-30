@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Wrench, Search, CheckCircle2, Clock, AlertTriangle, X } from 'lucide-react';
-import { ServiceTicket, TicketStatus } from '../types';
+import { ServiceTicket, TicketStatus } from '../../types';
 
 interface RequesterStatusPageProps {
   tickets: ServiceTicket[];
-  requesterName: string;
 }
 
 const statusConfig: Record<TicketStatus, { label: string; icon: React.ReactNode; className: string }> = {
@@ -16,19 +15,24 @@ const statusConfig: Record<TicketStatus, { label: string; icon: React.ReactNode;
   geannuleerd: { label: 'Geannuleerd', icon: <X className="w-3.5 h-3.5" />, className: 'bg-slate-100 text-slate-500 border-slate-200' },
 };
 
-export const RequesterStatusPage: React.FC<RequesterStatusPageProps> = ({ tickets, requesterName }) => {
+export const RequesterStatusPage: React.FC<RequesterStatusPageProps> = ({ tickets }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const myTickets = tickets.filter(t =>
-    t.requesterName?.toLowerCase() === requesterName.toLowerCase()
-  );
+  const visibleTickets = tickets.filter(t => !t.archived);
 
-  const filteredTickets = myTickets.filter(t => {
+  const filteredTickets = visibleTickets.filter(t => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return t.ticketNumber?.toLowerCase().includes(q) ||
-      t.title?.toLowerCase().includes(q);
+      t.requesterName?.toLowerCase().includes(q);
   });
+
+  const statusCounts: { status: TicketStatus; count: number }[] = [
+    { status: 'open', count: visibleTickets.filter(t => t.status === 'open').length },
+    { status: 'in_behandeling', count: visibleTickets.filter(t => t.status === 'in_behandeling').length },
+    { status: 'wachtlijst', count: visibleTickets.filter(t => t.status === 'wachtlijst').length },
+    { status: 'afgerond', count: visibleTickets.filter(t => t.status === 'afgerond').length },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#F7F5FA] to-amber-50/30 px-4 py-8 sm:py-12">
@@ -38,9 +42,9 @@ export const RequesterStatusPage: React.FC<RequesterStatusPageProps> = ({ ticket
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#24126E] text-white shadow-lg mb-2">
             <Wrench className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold text-[#24126E]">Mijn Klusjes Status</h1>
+          <h1 className="text-2xl font-bold text-[#24126E]">Klusjes Statusoverzicht</h1>
           <p className="text-sm text-slate-500">
-            Overzicht van al uw aangemelde klussen. Alleen TK nummers en status worden getoond.
+            Zoek uw TK nummer om te zien hoe het ermee staat. Alleen ticketnummers en statussen worden getoond.
           </p>
         </div>
 
@@ -51,15 +55,14 @@ export const RequesterStatusPage: React.FC<RequesterStatusPageProps> = ({ ticket
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Zoek op TK nummer of titel..."
+            placeholder="Zoek op TK nummer of aanvrager..."
             className="w-full pl-10 pr-4 py-3 bg-white rounded-2xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#24126E]"
           />
         </div>
 
         {/* Stats summary */}
         <div className="grid grid-cols-4 gap-3">
-          {(['open', 'in_behandeling', 'afgerond', 'afgewezen'] as TicketStatus[]).map(status => {
-            const count = myTickets.filter(t => t.status === status).length;
+          {statusCounts.map(({ status, count }) => {
             const config = statusConfig[status];
             return (
               <div key={status} className="bg-white rounded-2xl border border-slate-100 p-3 text-center shadow-xs">
@@ -81,40 +84,43 @@ export const RequesterStatusPage: React.FC<RequesterStatusPageProps> = ({ ticket
             </div>
             <h3 className="text-base font-bold text-slate-700">Geen klussen gevonden</h3>
             <p className="text-xs text-slate-500 mt-1">
-              {myTickets.length === 0
-                ? 'Er zijn nog geen klussen aangemeld onder uw naam.'
+              {visibleTickets.length === 0
+                ? 'Er zijn momenteel geen klussen aangemeld.'
                 : 'Geen klussen gevonden met deze zoekterm.'}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredTickets.map((ticket) => {
-              const config = statusConfig[ticket.status] || statusConfig.open;
-              return (
-                <div
-                  key={ticket.id}
-                  className="bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-xs hover:shadow-sm transition-shadow flex items-center justify-between gap-4"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border ${config.className}`}>
+            {filteredTickets
+              .slice()
+              .sort((a, b) => (b.ticketNumber || '').localeCompare(a.ticketNumber || ''))
+              .map((ticket) => {
+                const config = statusConfig[ticket.status] || statusConfig.open;
+                return (
+                  <div
+                    key={ticket.id}
+                    className="bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-xs hover:shadow-sm transition-shadow flex items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border ${config.className}`}>
+                        {config.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-[#24126E] font-mono">
+                          {ticket.ticketNumber}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {ticket.requesterName}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2.5 py-1.5 rounded-full border ${config.className}`}>
                       {config.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-[#24126E] font-mono">
-                        {ticket.ticketNumber}
-                      </p>
-                      <p className="text-xs text-slate-500 truncate">
-                        {ticket.title}
-                      </p>
-                    </div>
+                      {config.label}
+                    </span>
                   </div>
-                  <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2.5 py-1.5 rounded-full border ${config.className}`}>
-                    {config.icon}
-                    {config.label}
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         )}
 
