@@ -64,7 +64,7 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
   // Desk State
   const [activeTab, setActiveTab] = useState<'overview' | 'new_ticket'>('overview');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
+  const [copiedRequesterLink, setCopiedRequesterLink] = useState(false);  const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'horeca' | 'klusjes'>('all');
   const [currentMenuItems, setCurrentMenuItems] = useState<MenuItem[]>(() => propMenuItems && propMenuItems.length > 0 ? propMenuItems : []);
 
@@ -1531,6 +1531,21 @@ export const ServicePortal: React.FC<ServicePortalProps> = ({
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Aanvrager & Team</span>
                   <span className="font-bold text-[#24126E]">{selectedTicket.requesterName}</span>
                   <span className="text-slate-500 block text-[11px]">{selectedTicket.requesterTeam}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = `${window.location.origin}${window.location.pathname}?requester=${encodeURIComponent(selectedTicket.requesterName)}`;
+                      navigator.clipboard.writeText(url).then(() => {
+                        setCopiedRequesterLink(true);
+                        setTimeout(() => setCopiedRequesterLink(false), 2500);
+                      });
+                    }}
+                    className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-[#D70096] hover:text-[#b5007e] cursor-pointer"
+                    title="Kopieer een link met alleen de TK nummers en statussen van deze aanvrager"
+                  >
+                    {copiedRequesterLink ? <Check className="w-3 h-3" /> : <Link2 className="w-3 h-3" />}
+                    <span>{copiedRequesterLink ? 'Gekopieerd!' : 'Kopieer statuslink voor aanvrager'}</span>
+                  </button>
                 </div>
 
                 <div className="p-3 bg-[#F7F5FA] rounded-xl border border-slate-100">
