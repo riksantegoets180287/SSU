@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Utensils, 
   X, 
@@ -104,8 +104,15 @@ export const MenuManagementModal: React.FC<MenuManagementModalProps> = ({
   const [pickupDays, setPickupDays] = useState<number[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
+
+  useEffect(() => {
+    if ((isCreatingNew || editingDish) && formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [isCreatingNew, editingDish]);
 
   const showToast = (msg: string) => {
     setNotification(msg);
@@ -296,7 +303,7 @@ export const MenuManagementModal: React.FC<MenuManagementModalProps> = ({
 
           {/* EDIT / CREATE FORM DRAWER */}
           {(isCreatingNew || editingDish) && (
-            <div className="bg-white border-2 border-[#D70096]/40 rounded-3xl p-5 sm:p-6 shadow-md space-y-5 animate-in fade-in slide-in-from-top-4">
+            <div ref={formRef} className="bg-white border-2 border-[#D70096]/40 rounded-3xl p-5 sm:p-6 shadow-md space-y-5 animate-in fade-in slide-in-from-top-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h4 className="font-black text-base text-[#24126E] flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#D70096]" />
