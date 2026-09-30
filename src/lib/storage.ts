@@ -299,6 +299,15 @@ export async function saveMenuItems(items: MenuItem[]): Promise<void> {
     dietary_tag: m.dietaryTag || null,
     available_pickup_days: m.availablePickupDays || [],
   }));
+
+  // Delete items that are no longer in the array, then upsert the rest
+  const currentIds = items.map(m => m.id);
+  if (currentIds.length > 0) {
+    await supabase.from('menu_items').delete().not('id', 'in', `(${currentIds.map(id => `'${id}'`).join(',')})`);
+  } else {
+    await supabase.from('menu_items').delete().neq('id', '___none___');
+  }
+
   const { error } = await supabase.from('menu_items').upsert(rows, { onConflict: 'id' });
   if (error) console.error('save menu items:', error);
 }
